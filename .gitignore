@@ -1,0 +1,5 @@
+#ignore thumbnails created by windows
+Thumbs.db
+
+# Visual Studio 2015 cache/options directory
+.vs/
