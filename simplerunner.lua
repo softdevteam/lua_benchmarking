@@ -5,6 +5,8 @@ local benchlist = {
     "richards",
     "spectralnorm",
     "fannkuch_redux",
+    "md5",
+    "series",
 }
 
 function runbench(name)
