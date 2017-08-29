@@ -1,0 +1,11 @@
+language: c
+sudo: false
+
+before_script:
+  - sh ./build_luajit.sh
+
+script:
+  - ./builds/luajit_nojit simplerunner.lua
+  - ./builds/luajit simplerunner.lua
+  - ./builds/luajit_gc64 simplerunner.lua
+  - ./builds/luajit_dualnum simplerunner.lua
