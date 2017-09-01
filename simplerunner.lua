@@ -9,7 +9,8 @@ local benchlist = {
     "fannkuch_redux",
     "md5",
     "series",
-    "luacheck",
+    "luacheck_parser",
+    "luacheck",  
 }
 
 function runbench(name)

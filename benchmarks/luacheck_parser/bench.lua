@@ -46,19 +46,14 @@ for i,path in ipairs(source_paths) do
     luafile:close()   
 end
 
+local parser = require "luacheck.parser"   
+    
 function run_iter(count)
     for i=1,count do  
-        local reports = {}
+        local asts = {}
         
         for _, filebuf in ipairs(sources) do
-            table.insert(reports, luacheck.get_report(filebuf))
+            table.insert(asts, {parser.parse(filebuf)})
         end
-        
-        local options = {
-            cache = false,
-        }
-        local processed_report = luacheck.process_reports(reports, options)
-        assert(processed_report.fatals == 0)
-        assert(processed_report.warnings > 0)
     end
 end
