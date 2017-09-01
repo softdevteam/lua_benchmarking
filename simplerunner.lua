@@ -1,3 +1,5 @@
+package.path = package.path ..";lualibs/?/init.lua;lualibs/?.lua;lualibs/?/?.lua"
+
 local benchlist = {
     "binarytrees",
     "nbody",
@@ -7,6 +9,8 @@ local benchlist = {
     "fannkuch_redux",
     "md5",
     "series",
+    "luacheck_parser",
+    "luacheck",  
 }
 
 function runbench(name)
