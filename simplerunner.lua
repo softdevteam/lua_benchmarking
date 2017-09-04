@@ -10,7 +10,9 @@ local benchlist = {
     "md5",
     "series",
     "luacheck_parser",
-    "luacheck",  
+    "luacheck",
+    "capnproto_encode",
+    "capnproto_decode",
 }
 
 function runbench(name)
