@@ -13,8 +13,6 @@ local jitlog = jitlog_capnp.JITLog.parse(text)
 local traces = jitlog.traces
 local functions = jitlog.functions
 
-local aborted, completed, roots
-
 local stats = {
     top_aborted = false,
     top_stitched = false,
@@ -30,7 +28,12 @@ function init()
         func.stitch_roots = 0
     end
 
+    -- Trace id remapping table
+    local idmap = {}
+    local tracecount = 1
+
     for i, trace in ipairs(traces) do
+        --Build start and stop location keys for all the traces
         trace.startloc = bor(lshift(trace.startfunc, 16), trace.startpc)
 
         local lastlua
@@ -45,31 +48,53 @@ function init()
         end
 
         trace.lastlua = lastlua
-
         if lastlua then
             trace.stoploc = bor(lshift(lastlua.id, 16), trace.stoppc)
         end
-    end
 
+        local id = trace.id
+        trace.id = tracecount
+
+        -- Map trace ids to a consistent increasing value based on there order in the log
+        if not trace.abort then
+            idmap[id] = tracecount
+            tracecount = tracecount + 1
+        end
+
+        if trace.parentid ~= 0 then
+            assert(idmap[trace.parentid])
+            trace.parentid = idmap[trace.parentid]
+        end
+    end
 end
 
 function run_iter(n)
     for n=1, n do
         init()
 
-        local aborted = fun.iter(traces):filter(function(event) return event.abort end):totable()
-
-        local completed = fun.iter(traces):filter(function(event) return not event.abort end):totable()
-
+        local aborted = fun.iter(traces):filter(function(trace) return trace.abort end):totable()
+        local completed = fun.iter(traces):filter(function(trace) return not trace.abort end):totable()
         assert((#aborted + #completed) == #traces)
 
-        roots = fun.iter(completed):
-                    filter(function(event) return event.parentid == 0 end):
-                    totable()
+        local roots = fun.iter(completed):filter(function(trace) return trace.parentid == 0 end):reduce(function(roots, trace)
+            roots[trace.id] = trace
+            return roots
+        end, {})
+        assert(next(roots))
 
         for i, trace in ipairs(completed) do
             local startfunc = functions[trace.startfunc]
             startfunc.starts = startfunc.starts + 1
+
+            -- Map side traces to there root trace
+            if trace.parentid ~= 0 then
+                if roots[trace.parentid] then
+                    trace.rootid = trace.parentid
+                else
+                    trace.rootid = completed[trace.parentid].rootid
+                    assert(trace.rootid, completed[trace.parentid].id)
+                end
+            end
 
             -- Function header root trace
             if trace.parentid == 0 and trace.startpc == 0 and not trace.stitched then
@@ -110,7 +135,7 @@ function run_iter(n)
 
         stats.top_stitched = fun.iter(functions):max_by(function(f1, f2) return (f1.stitch_roots > f2.stitch_roots and f1) or f2 end)
 
-        --Build aborted trace stop locations counts
+        --Build aborted trace stop locations stats
         local aborted_locations = fun.iter(aborted):reduce(function(locs, trace)
             locs[trace.stoploc] = (locs[trace.stoploc] or 0) + 1
             return locs
@@ -121,13 +146,33 @@ function run_iter(n)
             return (aborted_locations[loc1] > aborted_locations[loc2] and loc1) or loc2
         end)
 
-        --Build trace side exit start location counts
-        local sidexit_start_locations = fun.iter(completed):filter(function(trace) return trace.parentid ~= 0 end):reduce(function(locs, trace)
+        assert(aborted_locations[stats.most_aborted_location] > 0)
+
+        --Build side trace start location stats
+        local sidetrace_locations = fun.iter(completed):filter(function(trace) return trace.parentid ~= 0 end):reduce(function(locs, trace)
             locs[trace.startloc] = (locs[trace.startloc] or 0) + 1
             return locs
         end, {})
 
-        stats.sidexit_start_locations = sidexit_start_locations
+        stats.sidetrace_locations = sidetrace_locations
+        stats.top_sidetrace_location = fun.iter(sidetrace_locations):max_by(function(loc1, loc2)
+            return (sidetrace_locations[loc1] > sidetrace_locations[loc2] and loc1) or loc2
+        end)
+
+        assert(sidetrace_locations[stats.top_sidetrace_location] > 0)
+
+        -- Build trace abort reason error code stats
+        local aborted_reasons = fun.iter(aborted):reduce(function(counts, trace)
+            counts[trace.aborterror] = counts[trace.aborterror] + 1
+            return counts
+        end, fun.zeros():take(#jitlog.abortreasons):totable())
+
+        stats.aborted_reasons = aborted_reasons
+        stats.top_aborted_reason = fun.range(1, #jitlog.abortreasons):max_by(function(err1, err2)
+            return (aborted_reasons[err1] > aborted_reasons[err2] and err1) or err2
+        end)
+
+        assert(aborted_reasons[stats.top_aborted_reason] > 0)
 
         local aborted_times = fun.iter(aborted):map(function(trace) return trace.endtime-trace.starttime end)
         stats.shortest_aborted = aborted_times:min()
