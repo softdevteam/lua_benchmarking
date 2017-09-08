@@ -1,5 +1,7 @@
 package.path = package.path ..";lualibs/?/init.lua;lualibs/?.lua;lualibs/?/?.lua"
 
+local  jitlog = require("jitlog")
+
 local benchlist = {
     "binarytrees",
     "nbody",
@@ -56,9 +58,16 @@ function run_single_benchmarks(benchname)
     error("No benchmark named '"..benchname.."'")
 end
 
+if arg[1] == "luacheck" then
+    jitlog.start()
+end
+
 if arg[1] then
     run_single_benchmarks(arg[1])
 else
     run_all_benchmarks()
 end
 
+if arg[1] == "luacheck" then
+    jitlog.save("benchdata/jitlog.bin")
+end
