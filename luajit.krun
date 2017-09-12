@@ -62,6 +62,7 @@ BENCHMARKS = {
     "capnproto_decode": 1,
     "jsonlua_encode": 1,
     "jsonlua_decode": 1,
+    "luafun": 1,
 }
 
 # list of "bench:vm:variant"

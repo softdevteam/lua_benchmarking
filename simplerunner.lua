@@ -15,6 +15,7 @@ local benchlist = {
     "capnproto_decode",
     "jsonlua_encode",
     "jsonlua_decode",
+    "luafun",
 }
 
 function runbench(name)
