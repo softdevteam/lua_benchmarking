@@ -58,9 +58,9 @@ BENCHMARKS = {
     "series": 2,
     "luacheck_parser": 1,
     "luacheck": 1,
-    "capnproto_encode": 800,
+    "capnproto_encode": 240,
     "capnproto_decode": 400,
-    "jsonlua_encode": 110,
+    "jsonlua_encode": 10,
     "jsonlua_decode": 200,
     "luafun": 4,
 }

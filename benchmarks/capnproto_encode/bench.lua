@@ -4,7 +4,7 @@ local example_capnp = require "example_capnp"
 
 local list = {}
 
-for i=1, 100 do
+for i=1, 1000 do
     local data = {
         i0 = 32,
         i1 = 16,
