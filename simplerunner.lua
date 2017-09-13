@@ -18,7 +18,7 @@ local benchlist = {
     "luafun",
 }
 
-function runbench(name)
+function runbench(name, count)
     dofile("benchmarks/"..name.."/bench.lua")
 
     if not run_iter then
@@ -26,7 +26,7 @@ function runbench(name)
     end
 
     local start = os.clock()
-    run_iter(1)
+    run_iter(count or 1)
     print(name.." took", os.clock() - start)  
 
     --Clear the benchmark function so we know we're not running this benchmark again when we load another benchmark.
@@ -41,14 +41,14 @@ function run_all_benchmarks()
     end
 end
 
-function run_single_benchmarks(benchname)
+function run_single_benchmarks(benchname, count)
     assert(#benchlist ~= 0)
 
     benchname = benchname:lower()
     
     for i,name in ipairs(benchlist) do
         if name == benchname then
-            runbench(name)
+            runbench(name, count)
             return
         end
     end
@@ -57,7 +57,7 @@ function run_single_benchmarks(benchname)
 end
 
 if arg[1] then
-    run_single_benchmarks(arg[1])
+    run_single_benchmarks(arg[1], arg[2])
 else
     run_all_benchmarks()
 end
