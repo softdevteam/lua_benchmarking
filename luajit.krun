@@ -67,6 +67,7 @@ BENCHMARKS = {
 
 # list of "bench:vm:variant"
 SKIP = [
+    "capnproto_decode:GC64:*", # Sometime crashes with GC64
     #"*:Normal:*",
     #"*:GC64:*",
     #"*:NoJIT:*",
