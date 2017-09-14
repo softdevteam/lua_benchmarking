@@ -99,3 +99,11 @@ ENABLE_PINNING = False
 # For many machines this is simply the base clock frequency, but generally
 # speaking, is undefined, so you need to check on a per-machine basis.
 #AMPERF_BUSY_THRESHOLD = 3.4 * 1000 * 1000 * 1000 / 1000  # 3.4 GHz / 1000
+
+PRE_EXECUTION_CMDS = [
+    "sudo systemctl stop cron",
+]
+
+POST_EXECUTION_CMDS = [
+    "sudo systemctl start cron || true",
+]
