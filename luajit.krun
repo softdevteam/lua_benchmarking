@@ -22,7 +22,8 @@ VARIANTS = {
     "default-lua": EntryPoint("bench.lua"),
 }
 
-ITERATIONS_ALL_VMS = 5
+ITERATIONS_ALL_VMS = 1500
+ITERATIONS_NO_JIT = 100
 
 VMS = {
     'Normal': {
@@ -38,7 +39,7 @@ VMS = {
     'NoJIT': {
         'vm_def': LuaVMDef("builds/luajit_nojit", env = VM_ENV),
         'variants': ['default-lua'],
-        'n_iterations': ITERATIONS_ALL_VMS,
+        'n_iterations': ITERATIONS_NO_JIT,
     },
     'DualNum': {
         'vm_def': LuaVMDef("builds/luajit_dualnum", env = VM_ENV),
@@ -48,25 +49,26 @@ VMS = {
 }
 
 BENCHMARKS = {
-    "binarytrees" : 1,
-    "nbody" : 1,
-    "fasta": 1,
-    "richards": 1,
-    "spectralnorm": 1,
-    "fannkuch_redux": 1,
-    "md5": 1,
-    "series": 1,
+    "binarytrees" : 2,
+    "nbody" : 10,
+    "fasta": 40,
+    "richards": 30,
+    "spectralnorm": 2,
+    "fannkuch_redux": 45,
+    "md5": 140,
+    "series": 2,
     "luacheck_parser": 1,
     "luacheck": 1,
-    "capnproto_encode": 1,
-    "capnproto_decode": 1,
-    "jsonlua_encode": 1,
-    "jsonlua_decode": 1,
-    "luafun": 1,
+    "capnproto_encode": 240,
+    "capnproto_decode": 400,
+    "jsonlua_encode": 10,
+    "jsonlua_decode": 200,
+    "luafun": 4,
 }
 
 # list of "bench:vm:variant"
 SKIP = [
+    "capnproto_decode:GC64:*", # Sometime crashes with GC64
     #"*:Normal:*",
     #"*:GC64:*",
     #"*:NoJIT:*",
@@ -75,7 +77,7 @@ SKIP = [
     #"luacheck_parser:*:*",
 ]
 
-N_EXECUTIONS = 1  # Number of fresh processes.
+N_EXECUTIONS = 10  # Number of fresh processes.
 
 # Commands to run before and after each process execution
 #
