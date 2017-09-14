@@ -1,0 +1,101 @@
+import os
+from krun.vm_defs import (LuaVMDef)
+from krun import EntryPoint
+from krun.util import fatal
+
+# Who to mail
+MAIL_TO = []
+
+# Maximum number of error emails to send per-run
+#MAX_MAILS = 2
+
+DIR = os.getcwd()
+
+VM_ENV = {
+  'LUA_PATH' : '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(os.path.join(DIR, "lualibs"))
+}
+
+HEAP_LIMIT = 2097152  # KiB
+STACK_LIMIT = 8192  # KiB
+
+VARIANTS = {
+    "default-lua": EntryPoint("bench.lua"),
+}
+
+ITERATIONS_ALL_VMS = 1500
+ITERATIONS_NO_JIT = 100
+
+VMS = {
+    'Normal': {
+        'vm_def': LuaVMDef("builds/luajit", VM_ENV),
+        'variants': ['default-lua'],
+        'n_iterations': ITERATIONS_ALL_VMS,
+    },
+    'GC64': {
+        'vm_def': LuaVMDef("builds/luajit_gc64", VM_ENV),
+        'variants': ['default-lua'],
+        'n_iterations': ITERATIONS_ALL_VMS,
+    },
+    'NoJIT': {
+        'vm_def': LuaVMDef("builds/luajit_nojit", env = VM_ENV),
+        'variants': ['default-lua'],
+        'n_iterations': ITERATIONS_NO_JIT,
+    },
+    'DualNum': {
+        'vm_def': LuaVMDef("builds/luajit_dualnum", env = VM_ENV),
+        'variants': ['default-lua'],
+        'n_iterations': ITERATIONS_ALL_VMS,
+    },
+}
+
+BENCHMARKS = {
+    "binarytrees" : 2,
+    "nbody" : 10,
+    "fasta": 40,
+    "richards": 30,
+    "spectralnorm": 2,
+    "fannkuch_redux": 45,
+    "md5": 140,
+    "series": 2,
+    "luacheck_parser": 1,
+    "luacheck": 1,
+    "capnproto_encode": 240,
+    "capnproto_decode": 400,
+    "jsonlua_encode": 10,
+    "jsonlua_decode": 200,
+    "luafun": 4,
+}
+
+# list of "bench:vm:variant"
+SKIP = [
+    "capnproto_decode:GC64:*", # Sometime crashes with GC64
+    #"*:Normal:*",
+    #"*:GC64:*",
+    #"*:NoJIT:*",
+    #"*:DualNum:*",
+    #"luacheck:*:*",
+    #"luacheck_parser:*:*",
+]
+
+N_EXECUTIONS = 10  # Number of fresh processes.
+
+# Commands to run before and after each process execution
+#
+# Environment available for these commands:
+#   KRUN_RESULTS_FILE: path to results file.
+#   KRUN_LOG_FILE: path to log file.
+#   KRUN_ETA_DATUM: time the ETA was computed
+#   KRUN_ETA_VALUE: estimated time of completion
+#PRE_EXECUTION_CMDS = ["sudo service cron stop"]
+#POST_EXECUTION_CMDS = ["sudo service cron start"]
+
+# CPU pinning (off by default)
+ENABLE_PINNING = False
+
+# Lower and upper bound for acceptable APERF/MPERF ratios
+#AMPERF_RATIO_BOUNDS = 0.995, 1.005
+
+# Rough rate of change in APERF per second above which a core is considered busy.
+# For many machines this is simply the base clock frequency, but generally
+# speaking, is undefined, so you need to check on a per-machine basis.
+#AMPERF_BUSY_THRESHOLD = 3.4 * 1000 * 1000 * 1000 / 1000  # 3.4 GHz / 1000
