@@ -22,7 +22,8 @@ VARIANTS = {
     "default-lua": EntryPoint("bench.lua"),
 }
 
-ITERATIONS_ALL_VMS = 5
+ITERATIONS_ALL_VMS = 1500
+ITERATIONS_NO_JIT = 100
 
 VMS = {
     'Normal': {
@@ -38,7 +39,7 @@ VMS = {
     'NoJIT': {
         'vm_def': LuaVMDef("builds/luajit_nojit", env = VM_ENV),
         'variants': ['default-lua'],
-        'n_iterations': ITERATIONS_ALL_VMS,
+        'n_iterations': ITERATIONS_NO_JIT,
     },
     'DualNum': {
         'vm_def': LuaVMDef("builds/luajit_dualnum", env = VM_ENV),
@@ -76,7 +77,7 @@ SKIP = [
     #"luacheck_parser:*:*",
 ]
 
-N_EXECUTIONS = 1  # Number of fresh processes.
+N_EXECUTIONS = 10  # Number of fresh processes.
 
 # Commands to run before and after each process execution
 #
