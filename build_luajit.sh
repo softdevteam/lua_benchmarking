@@ -1,6 +1,5 @@
-#!/bin/sh
+#!/bin/bash
 #Build the various intresting flavors of LuaJIT
-
 
 if [ $# -gt 1 ]; then
     echo "Usage: build_luajit.sh [<source dir>]" 2>&1
@@ -21,6 +20,13 @@ else
     if [ ! -d "raptorjit_repo" ]; then 
       git clone https://github.com/raptorjit/raptorjit raptorjit_repo
     fi
+
+    if [ -f "commitlock.txt" ]; then 
+      source commitlock.txt
+      echo "Current luajit commit hash: ${luajit_commitid}"
+      echo "Current raptorjit commit hash: ${raptorjit_commitid}"
+      (cd luajit_repo && git checkout ${luajit_commitid})
+      (cd raptorjit_repo && git checkout ${raptorjit_commitid})
     fi
 fi
 
