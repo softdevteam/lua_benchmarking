@@ -9,3 +9,4 @@ script:
   - ./builds/luajit simplerunner.lua
   - ./builds/luajit_gc64 simplerunner.lua
   - ./builds/luajit_dualnum simplerunner.lua
+  - ./builds/raptorjit simplerunner.lua
