@@ -37,6 +37,7 @@ SOFTWARE.
 --]]
 
 local ffi = require("ffi")
+local json = require("json_nojit")
 
 function emit_per_core_measurements(name, num_cores, tbl, tbl_len)
     io.stdout:write(string.format('"%s": [', name))
@@ -82,6 +83,12 @@ local BM_benchmark = arg[1]
 local BM_iters = tonumber(arg[2])
 local BM_param = tonumber(arg[3])
 local BM_debug = tonumber(arg[4]) > 0
+local BM_instrument = tonumber(arg[5]) > 0
+local jitstats = require("jitstats")
+
+if BM_instrument then
+    jitstats = require("jitstats")
+end
 
 if #arg ~= 5 then
     io.stderr:write("usage: iterations_runner.lua <benchmark> <# of iterations> " ..
@@ -124,10 +131,23 @@ for BM_core = 1, BM_num_cores, 1 do
     end
 end
 
+local stats_start, stats_stop 
+
+if BM_instrument then
+    jitstats.start()
+    stats_start = {}
+    stats_stop = {}
+    jitstats.reset(stats_start)
+    jitstats.reset(stats_stop)
+end
+
 -- Main loop
 for BM_i = 1, BM_iters, 1 do
     if BM_debug then
         io.stderr:write(string.format("[iterations_runner.lua] iteration %d/%d\n", BM_i, BM_iters))
+    end
+    if BM_instrument then
+        jitstats.getsnapshot(stats_start)
     end
 
     -- Start timed section
@@ -135,6 +155,11 @@ for BM_i = 1, BM_iters, 1 do
     run_iter(BM_param)
     krun_measure(1);
     -- End timed section
+
+    if BM_instrument then
+        jitstats.getsnapshot(stats_stop)
+        io.stderr:write("@@@ JIT_STATS "..json.encode(jitstats.diffsnapshots(stats_start, stats_stop)).."\n")
+    end
 
     -- Compute deltas
     BM_wallclock_times[BM_i] = krun_get_wallclock(1) - krun_get_wallclock(0);
@@ -150,6 +175,11 @@ for BM_i = 1, BM_iters, 1 do
             krun_get_mperf_double(1, BM_core - 1) -
             krun_get_mperf_double(0, BM_core - 1)
     end
+end
+
+if BM_instrument then
+    -- Note this includes stats generated from the main benchmark loop above as well
+    io.stderr:write("@@@ JIT_STATS_ALL "..json.encode(jitstats.getsnapshot()).."\n")
 end
 
 krun_done()

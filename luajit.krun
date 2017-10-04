@@ -1,5 +1,6 @@
 import os
-from krun.vm_defs import (LuaVMDef)
+import json
+from krun.vm_defs import (GenericScriptingVMDef)
 from krun import EntryPoint
 from krun.util import fatal
 
@@ -12,7 +13,8 @@ MAIL_TO = []
 DIR = os.getcwd()
 
 VM_ENV = {
-  'LUA_PATH' : '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(os.path.join(DIR, "lualibs"))
+  'LUA_PATH' : '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(os.path.join(DIR, "lualibs")) + 
+               '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(os.path.join(DIR, "luajit_repo/src"))
 }
 
 HEAP_LIMIT = 2097152  # KiB
@@ -22,32 +24,70 @@ VARIANTS = {
     "default-lua": EntryPoint("bench.lua"),
 }
 
+N_EXECUTIONS = 10  # Number of fresh processes.
 ITERATIONS_ALL_VMS = 1500
 ITERATIONS_NO_JIT = 100
+INSTRUMENT = True
+
+class LuaJITVMDef(GenericScriptingVMDef):
+    JIT_STATS_MARKER = "@@@ JIT_STATS "
+    JIT_STATS_ALL_MARKER = "@@@ JIT_STATS_ALL "
+
+    def __init__(self, vm_path, entry_point=None,
+                 subdir=None, env=None, instrument=False):
+        GenericScriptingVMDef.__init__(self, vm_path, "iterations_runner.lua",
+                                       env=env, instrument=instrument)
+        self.iterations_runner = "iterations_runner.lua"
+
+    def run_exec(self, interpreter, benchmark, iterations, param, heap_lim_k,
+                 stack_lim_k, force_dir=None, sync_disks=True):
+        return self._generic_scripting_run_exec(interpreter, benchmark,
+                                                iterations, param, heap_lim_k,
+                                                stack_lim_k,
+                                                force_dir=force_dir,
+                                                sync_disks=sync_disks)
+
+    def parse_instr_stderr_file(self, file_handle):
+        """Parse json encoded jit stats snapshots for each iterations.
+        """
+        iter_data = []
+        prefix_len = len(LuaJITVMDef.JIT_STATS_MARKER)
+
+        for line in file_handle:
+            if line.startswith(LuaJITVMDef.JIT_STATS_MARKER):
+              line = line[prefix_len:]
+              stats = json.loads(line)
+              iter_data.append(stats)
+            elif line.startswith(LuaJITVMDef.JIT_STATS_ALL_MARKER):
+              line = line[len(LuaJITVMDef.JIT_STATS_ALL_MARKER):]
+              stats_total = json.loads(line)
+
+        stats["total"] = stats_total
+        return {"jitstats": iter_data}
 
 VMS = {
     'Normal': {
-        'vm_def': LuaVMDef("builds/luajit", env=VM_ENV),
+        'vm_def': LuaJITVMDef("builds/luajit", env=VM_ENV,instrument=INSTRUMENT),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
     'GC64': {
-        'vm_def': LuaVMDef("builds/luajit_gc64", env=VM_ENV),
+        'vm_def': LuaJITVMDef("builds/luajit_gc64", env=VM_ENV,instrument=INSTRUMENT),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
     'NoJIT': {
-        'vm_def': LuaVMDef("builds/luajit_nojit", env=VM_ENV),
+        'vm_def': LuaJITVMDef("builds/luajit_nojit", env=VM_ENV),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_NO_JIT,
     },
     'DualNum': {
-        'vm_def': LuaVMDef("builds/luajit_dualnum", env=VM_ENV),
+        'vm_def': LuaJITVMDef("builds/luajit_dualnum", env=VM_ENV,instrument=INSTRUMENT),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
     'RaptorJIT': {
-        'vm_def': LuaVMDef("builds/raptorjit", env=VM_ENV),
+        'vm_def': LuaJITVMDef("builds/raptorjit", env=VM_ENV),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
@@ -74,16 +114,15 @@ BENCHMARKS = {
 # list of "bench:vm:variant"
 SKIP = [
     "capnproto_decode:GC64:*", # Sometime crashes with GC64
-    "capnproto_decode:RaptorJIT:*" # Sometimes crashes as well
+    "capnproto_decode:RaptorJIT:*", # Sometimes crashes as well
     #"*:Normal:*",
     #"*:GC64:*",
     #"*:NoJIT:*",
     #"*:DualNum:*",
+    #"*:RaptorJIT:*",
     #"luacheck:*:*",
     #"luacheck_parser:*:*",
 ]
-
-N_EXECUTIONS = 10  # Number of fresh processes.
 
 # Commands to run before and after each process execution
 #
