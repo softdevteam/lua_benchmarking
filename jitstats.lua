@@ -444,5 +444,11 @@ function jitstats.print(statstbl, msg)
     end
 end
 
+-- Turn off the JIT for all the functions in this file so they don't inflate the JIT stats when called.
+-- Unfortunately these functions still decrement the hot counters until they reach zero. Instead of tracing,
+-- the triggering bytecode is patched to interpreter only. This means no VM events are triggered for these points
+-- for us to worry about.
+jit.off(true, true)
+
 jitstats.reset()
 return jitstats
