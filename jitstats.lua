@@ -125,9 +125,12 @@ local stats = jitstats.stats
 local vmevent = {}
 
 local curr_parentid, curr_stitched
+local start_pc, start_func
 -- Trace started
 function vmevent.start(tr, func, pc, parentid, exitnum)
     curr_parentid = parentid
+    start_func = func
+    start_pc = pc
     curr_stitched = parentid and parentid > 0 and exitnum == -1
 
     debugprint("START(%d): parent = %d", tr, parentid or -1)
@@ -179,9 +182,23 @@ function vmevent.abort(tr, func, pc, code, errinfo)
     else
         debugprint("ABORT(%d): %s", tr, reason)
     end
+    
+    local bc = funcbc(start_func, start_pc)
+    local bcname = bc and bcnames[band(bc, 0xff)]
+    if bcname == "IFUNCF" then
+        if jitstats.debug then
+            debugprint("Function blacklisted: %s", funcinfo(func, pc).loc)
+        end
+        stats.func_blacklisted = stats.func_blacklisted + 1
+    elseif bcname == "ILOOP" or bcname == "IFORL" or bcname == "IITERL" then
+        if jitstats.debug then
+            debugprint("Loop blacklisted: %s", funcinfo(func, pc).loc)
+        end
+        stats.loop_blacklisted = stats.loop_blacklisted + 1
+    end
 
     -- We sometimes don't get a bc for the stop location
-    local bc = funcbc(func, pc)
+    bc = funcbc(func, pc)
     local opcode = bc and band(bc, 0xff)
     
     if code == traceerr.LLEAVE then
@@ -267,6 +284,8 @@ function jitstats.reset(statstbl)
     statstbl.traceflush = 0
     --Clear or initlize 
     reset_subtables(statstbl)
+    statstbl.func_blacklisted = 0
+    statstbl.loop_blacklisted = 0
 end
 
 -- Note no attempt is made to handle circular references
@@ -436,9 +455,15 @@ function jitstats.print(statstbl, msg)
             printf("    %d %s", statstbl.nyi_bc[bc], bc)
         end
     end
-    
+
+    if statstbl.func_blacklisted > 0 then
+        printf(" Functions blacklisted: %d", statstbl.func_blacklisted)
+    end
+    if statstbl.loop_blacklisted > 0 then
+        printf(" Loops blacklisted: %d", statstbl.loop_blacklisted)
+    end
     printf(" Uncompiled exits taken %d", statstbl.exits)
-    
+
     if running then
         jitstats.start()
     end
