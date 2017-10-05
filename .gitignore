@@ -7,3 +7,4 @@ luajit_envlogs/
 luajit.manifest
 luajit_*.log
 luajit_results.json.bz2
+luajit_instr_data/
