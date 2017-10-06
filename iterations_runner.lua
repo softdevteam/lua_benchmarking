@@ -38,6 +38,7 @@ SOFTWARE.
 
 local ffi = require("ffi")
 local json = require("json_nojit")
+local jitstats
 
 function emit_per_core_measurements(name, num_cores, tbl, tbl_len)
     io.stdout:write(string.format('"%s": [', name))
@@ -84,7 +85,6 @@ local BM_iters = tonumber(arg[2])
 local BM_param = tonumber(arg[3])
 local BM_debug = tonumber(arg[4]) > 0
 local BM_instrument = tonumber(arg[5]) > 0
-local jitstats = require("jitstats")
 
 if BM_instrument then
     jitstats = require("jitstats")
