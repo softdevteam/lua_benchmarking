@@ -36,30 +36,40 @@ mkdir -p ${ljbins}
 # Make directory path relative so we don't have to worry about what path we have to pass to make.
 ljbins="$( cd "$ljbins" && pwd )"
 
+function copy_binaries() {
+    mkdir -p ${ljbins}/$1/jit/
+    cp ${ljsrc}/luajit ${ljbins}/$1/luajit
+    cp ${ljsrc}/libluajit.so ${ljbins}/$1/libluajit.so
+    cp ${ljsrc}/jit/*.lua ${ljbins}/$1/jit/
+}
+  
 #Unmodified build with 32 bit sized gc object pointers. Object allocataion limited to the lower 4gb virtual address space
 make -C ${ljsrc} clean
 make -C ${ljsrc} -j
-cp ${ljsrc}/luajit ${ljbins}/luajit
+copy_binaries "normal"
 
 #Build with JIT removed
 make -C ${ljsrc} clean
 make -C ${ljsrc} -j XCFLAGS=-DLUAJIT_DISABLE_JIT
-cp ${ljsrc}/luajit ${ljbins}/luajit_nojit
+copy_binaries "nojit"
 
-#GC64 64 bit sized gc object pointer
+##GC64 64 bit sized gc object pointer
 make -C ${ljsrc} clean
 make -C ${ljsrc} -j XCFLAGS=-DLUAJIT_ENABLE_GC64
-cp ${ljsrc}/luajit ${ljbins}/luajit_gc64
+copy_binaries "gc64"
 
-# Build with dual number mode enabled
+## Build with dual number mode enabled
 make -C ${ljsrc} clean
 make -C ${ljsrc} -j XCFLAGS=-DLUAJIT_NUMMODE=2
-cp ${ljsrc}/luajit ${ljbins}/luajit_dualnum
+copy_binaries "dualnum"
 
 if [ -d "raptorjit_repo" ]; then
-  make -C ./raptorjit_repo clean
-  make -C ./raptorjit_repo -j HOST_LUA=${ljbins}/luajit
-  cp ./raptorjit_repo/src/raptorjit ${ljbins}/raptorjit
+    make -C ./raptorjit_repo clean
+    make -C ./raptorjit_repo -j HOST_LUA=${ljbins}/normal/luajit
+    mkdir -p ${ljbins}/raptorjit/jit/
+    cp ./raptorjit_repo/src/raptorjit ${ljbins}/raptorjit/luajit
+    cp ./raptorjit_repo/src/libraptorjit.so ${ljbins}/raptorjit/libluajit.so
+    cp ./raptorjit_repo/src/jit/*.lua ${ljbins}/raptorjit/jit/
 fi
 
 #32 bit build
