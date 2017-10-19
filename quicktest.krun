@@ -1,0 +1,8 @@
+# Krun config file aimed to help quickly test all the benchmarks work under krun
+
+execfile("luajit.krun", globals()) # inherit settings from the main experiment
+
+for key, vm in VMS.iteritems():
+  vm["n_iterations"] = 2
+
+N_EXECUTIONS = 1

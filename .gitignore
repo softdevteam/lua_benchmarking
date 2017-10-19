@@ -3,9 +3,11 @@ Thumbs.db
 
 # Visual Studio 2015 cache/options directory
 .vs/
-luajit_envlogs/
-luajit.manifest
-luajit_*.log
-luajit_results.json.bz2
-luajit_instr_data/
 /builds/
+*.manifest
+luajit_*.log
+quicktest_*.log
+*_envlogs/
+*_results.json.bz2
+*_instr_data/
+bencher_*.log
