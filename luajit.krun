@@ -12,10 +12,13 @@ MAIL_TO = []
 
 DIR = os.getcwd()
 
-VM_ENV = {
-  'LUA_PATH' : '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(os.path.join(DIR, "lualibs")) + 
-               '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(os.path.join(DIR, "luajit_repo/src"))
-}
+VM_ENV = '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(os.path.join(DIR, "lualibs"))
+
+def make_env(vmdir):
+  basedir = os.path.join(DIR, "builds", vmdir)
+  return {
+    'LUA_PATH' : VM_ENV + '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(basedir) 
+  }
 
 HEAP_LIMIT = 2097152  # KiB
 STACK_LIMIT = 8192  # KiB
@@ -67,27 +70,27 @@ class LuaJITVMDef(GenericScriptingVMDef):
 
 VMS = {
     'Normal': {
-        'vm_def': LuaJITVMDef("builds/luajit", env=VM_ENV,instrument=INSTRUMENT),
+        'vm_def': LuaJITVMDef("builds/normal/luajit", env=make_env("normal"), instrument=INSTRUMENT),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
     'GC64': {
-        'vm_def': LuaJITVMDef("builds/luajit_gc64", env=VM_ENV,instrument=INSTRUMENT),
+        'vm_def': LuaJITVMDef("builds/gc64/luajit", env=make_env("gc64"), instrument=INSTRUMENT),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
     'NoJIT': {
-        'vm_def': LuaJITVMDef("builds/luajit_nojit", env=VM_ENV),
+        'vm_def': LuaJITVMDef("builds/nojit/luajit", env=make_env("nojit")),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_NO_JIT,
     },
     'DualNum': {
-        'vm_def': LuaJITVMDef("builds/luajit_dualnum", env=VM_ENV,instrument=INSTRUMENT),
+        'vm_def': LuaJITVMDef("builds/dualnum/luajit", env=make_env("dualnum"), instrument=INSTRUMENT),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
     'RaptorJIT': {
-        'vm_def': LuaJITVMDef("builds/raptorjit", env=VM_ENV),
+        'vm_def': LuaJITVMDef("builds/raptorjit/luajit", env=make_env("raptorjit")),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },

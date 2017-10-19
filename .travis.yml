@@ -5,8 +5,8 @@ before_script:
   - ./build_luajit.sh
 
 script:
-  - ./builds/luajit_nojit simplerunner.lua
-  - ./builds/luajit simplerunner.lua
-  - ./builds/luajit_gc64 simplerunner.lua
-  - ./builds/luajit_dualnum simplerunner.lua
-  - ./builds/raptorjit simplerunner.lua
+  - ./builds/nojit/luajit simplerunner.lua
+  - ./builds/normal/luajit simplerunner.lua
+  - ./builds/gc64/luajit simplerunner.lua
+  - ./builds/dualnum/luajit simplerunner.lua
+  - ./builds/raptorjit/luajit simplerunner.lua
