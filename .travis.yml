@@ -2,7 +2,7 @@ language: c
 sudo: false
 
 before_script:
-  - ./build_luajit.sh
+  - ./build.sh
 
 script:
   - ./builds/nojit/luajit simplerunner.lua

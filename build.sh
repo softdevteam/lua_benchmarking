@@ -1,8 +1,8 @@
 #!/bin/bash
-#Build the various intresting flavors of LuaJIT
 
+#Build the various interesting flavours of LuaJIT
 if [ $# -gt 1 ]; then
-    echo "Usage: build_luajit.sh [<source dir>]" 2>&1
+    echo "Usage: build.sh [<LuaJIT source dir>]" 2>&1
     exit 1
 fi
 
@@ -45,7 +45,7 @@ function copy_binaries() {
 
 BASE_XCFLAGS=${BASE_XCFLAGS:=""}
 
-#Unmodified build with 32 bit sized gc object pointers. Object allocataion limited to the lower 4gb virtual address space
+#Unmodified build with 32 bit sized GC object pointers. Object allocation limited to the lower 4gb virtual address space
 make -C ${ljsrc} clean
 make -C ${ljsrc} -j XCFLAGS="${BASE_XCFLAGS}"
 copy_binaries "normal"
@@ -55,7 +55,7 @@ make -C ${ljsrc} clean
 make -C ${ljsrc} -j XCFLAGS="${BASE_XCFLAGS} -DLUAJIT_DISABLE_JIT"
 copy_binaries "nojit"
 
-##GC64 64 bit sized gc object pointer
+##GC64 64 bit sized GC object pointer
 make -C ${ljsrc} clean
 make -C ${ljsrc} -j XCFLAGS="${BASE_XCFLAGS} -DLUAJIT_ENABLE_GC64"
 copy_binaries "gc64"
@@ -74,7 +74,28 @@ if [ -d "raptorjit_repo" ]; then
     cp ./raptorjit_repo/src/jit/*.lua ${ljbins}/raptorjit/jit/
 fi
 
-#32 bit build
-#make -C ${ljsrc} clean
-#make -C ${ljsrc} -j CC="gcc -m32"
-#cp ${ljsrc}/luajit ${ljbins}/luajit32
+## Optional 32 bit build
+if [ ${BUILD_LJ32} ]; then
+  make -C ${ljsrc} clean
+  make -C ${ljsrc} -j CC="gcc -m32" XCFLAGS="${BASE_XCFLAGS}"
+  copy_binaries "luajit32"
+fi
+
+if [ ${BUILDALL} ]; then
+  if [ ! -d "lua-vermelha" ]; then 
+    git clone  --recursive https://github.com/Leonardo2718/lua-vermelha
+  fi
+
+  mkdir -p ${ljbins}/lua-vermelha
+  
+  # Make directory path relative so we don't have to worry about what path we have to pass to make.
+  ljbins="$( cd "$ljbins" && pwd )"
+  
+  cd lua-vermelha/omr/
+  make -f run_configure.mk SPEC=linux_x86-64 OMRGLUE=./example/glue
+  cd ..
+  make -j
+  cd ..
+  cp lua-vermelha/luav ${ljbins}/lua-vermelha/luav
+fi
+
