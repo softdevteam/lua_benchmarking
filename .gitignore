@@ -11,3 +11,6 @@ quicktest_*.log
 *_results.json.bz2
 *_instr_data/
 bencher_*.log
+lua-vermelha/
+raptorjit_repo/
+luajit_repo/
