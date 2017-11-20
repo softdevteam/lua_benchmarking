@@ -1,0 +1,43 @@
+execfile("luajit.krun", globals()) # inherit settings from the main experiment
+
+MAIL_TO = ["fsfod11@gmail.com"]
+
+PRE_EXECUTION_CMDS = [
+    "sudo systemctl stop apt-daily.timer",
+    "sudo systemctl --runtime disable apt-daily.timer",
+
+    "sudo systemctl stop apt-daily-upgrade.timer",
+    "sudo systemctl --runtime disable apt-daily-upgrade.timer",
+
+    "sudo systemctl stop systemd-tmpfiles-clean.timer",
+    "sudo systemctl --runtime disable systemd-tmpfiles-clean.timer",
+
+    "sudo systemctl stop systemd-timesyncd",
+    "sudo systemctl --runtime disable systemd-timesyncd",
+
+    "sudo systemctl stop cron",
+]
+
+POST_EXECUTION_CMDS = [
+    "sudo systemctl start systemd-timesyncd || true",
+    "sudo systemctl start cron || true",
+
+    "sudo systemctl --runtime enable apt-daily.timer || true",
+    "sudo systemctl start apt-daily.timer || true",
+
+    "sudo systemctl --runtime enable apt-daily-upgrade.timer || true",
+    "sudo systemctl start apt-daily-upgrade.timer || true",
+
+    "sudo systemctl --runtime enable systemd-tmpfiles-clean.timer || true",
+    "sudo systemctl start systemd-tmpfiles-clean.timer || true",
+]
+
+def custom_dmesg_whitelist(defaults):
+    return defaults + [
+      "^.*en[0-9a-zA-Z]+: link (down|up)",
+      "^.*en[0-9a-zA-Z]+: Link is (up|down).*",
+      "^.*en[0-9a-zA-Z]+: Flow control is (on|off).*",
+      "^.*en[0-9a-zA-Z]+: EEE is (enabled|disabled).*",
+      "^.*random: crng init done",
+      "^.*apt-daily-upgrade.timer: Adding.*",
+    ]
