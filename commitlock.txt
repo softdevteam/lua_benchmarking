@@ -1,0 +1,2 @@
+luajit_commitid=ea7071d3c30b6432bfe6f8a9d263e0285cec25e3
+raptorjit_commitid=39680ca7ebc3ce43f68c465bedb3e88f074aaeea
