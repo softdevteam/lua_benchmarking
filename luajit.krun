@@ -30,7 +30,7 @@ VARIANTS = {
 N_EXECUTIONS = 10  # Number of fresh processes.
 ITERATIONS_ALL_VMS = 1500
 ITERATIONS_NO_JIT = 100
-INSTRUMENT = True
+INSTRUMENT = False
 
 class LuaJITVMDef(GenericScriptingVMDef):
     JIT_STATS_MARKER = "@@@ JIT_STATS "
