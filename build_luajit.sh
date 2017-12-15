@@ -14,7 +14,7 @@ else
     ljsrc=luajit_repo/src
 
     if [ ! -d "luajit_repo" ]; then 
-      git clone -b v2.1 https://github.com/LuaJIT/LuaJIT luajit_repo
+      git clone https://github.com/softdevteam/LuaJIT luajit_repo
     fi
 
     if [ ! -d "raptorjit_repo" ]; then 
