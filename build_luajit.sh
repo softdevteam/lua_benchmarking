@@ -42,25 +42,27 @@ function copy_binaries() {
     cp ${ljsrc}/libluajit.so ${ljbins}/$1/libluajit.so
     cp ${ljsrc}/jit/*.lua ${ljbins}/$1/jit/
 }
-  
+
+BASE_XCFLAGS=${BASE_XCFLAGS:=""}
+
 #Unmodified build with 32 bit sized gc object pointers. Object allocataion limited to the lower 4gb virtual address space
 make -C ${ljsrc} clean
-make -C ${ljsrc} -j
+make -C ${ljsrc} -j XCFLAGS="${BASE_XCFLAGS}"
 copy_binaries "normal"
 
 #Build with JIT removed
 make -C ${ljsrc} clean
-make -C ${ljsrc} -j XCFLAGS=-DLUAJIT_DISABLE_JIT
+make -C ${ljsrc} -j XCFLAGS="${BASE_XCFLAGS} -DLUAJIT_DISABLE_JIT"
 copy_binaries "nojit"
 
 ##GC64 64 bit sized gc object pointer
 make -C ${ljsrc} clean
-make -C ${ljsrc} -j XCFLAGS=-DLUAJIT_ENABLE_GC64
+make -C ${ljsrc} -j XCFLAGS="${BASE_XCFLAGS} -DLUAJIT_ENABLE_GC64"
 copy_binaries "gc64"
 
 ## Build with dual number mode enabled
 make -C ${ljsrc} clean
-make -C ${ljsrc} -j XCFLAGS=-DLUAJIT_NUMMODE=2
+make -C ${ljsrc} -j XCFLAGS="${BASE_XCFLAGS} -DLUAJIT_NUMMODE=2"
 copy_binaries "dualnum"
 
 if [ -d "raptorjit_repo" ]; then
