@@ -27,7 +27,7 @@ VARIANTS = {
     "default-lua": EntryPoint("bench.lua"),
 }
 
-N_EXECUTIONS = 10  # Number of fresh processes.
+N_EXECUTIONS = 15  # Number of fresh process executions.
 ITERATIONS_ALL_VMS = 1500
 ITERATIONS_NO_JIT = 100
 INSTRUMENT = False
