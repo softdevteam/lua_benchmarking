@@ -1,0 +1,18 @@
+execfile("luajit.krun", globals()) # inherit settings from the main experiment
+
+VMS = {
+    'LuaV': {
+        'vm_def': LuaJITVMDef("builds/lua-vermelha/luav"),
+        'variants': ['default-lua'],
+        'n_iterations': ITERATIONS_ALL_VMS,
+    },
+}
+
+SKIP = [
+    "luacheck:LuaV:*",
+    "luacheck_parser:LuaV:*",
+    "capnproto_decode:LuaV:*", 
+    "capnproto_decode:LuaV:*", # Sometimes crashes as well
+    "luafun:LuaV:*", # Uses capnproto to decode its data
+    "md5:LuaV:*", # needs reimplmentation of the bit library
+]
