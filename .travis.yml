@@ -5,8 +5,8 @@ before_script:
   - ./build.sh
 
 script:
-  - ./builds/nojit/luajit simplerunner.lua
-  - ./builds/normal/luajit simplerunner.lua
-  - ./builds/gc64/luajit simplerunner.lua
-  - ./builds/dualnum/luajit simplerunner.lua
-  - ./builds/raptorjit/luajit simplerunner.lua
+  - ./builds/nojit/luajit simplerunner.lua 1
+  - ./builds/normal/luajit simplerunner.lua --jitstats 3
+  - ./builds/gc64/luajit simplerunner.lua -e capnproto_decode 3
+  - ./builds/dualnum/luajit simplerunner.lua 3
+  - ./builds/raptorjit/luajit simplerunner.lua -e capnproto_decode 3
