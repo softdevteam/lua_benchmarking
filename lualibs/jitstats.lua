@@ -432,12 +432,13 @@ function jitstats.print(statstbl, msg)
         side_aborts = valpercent(statstbl.starts, statstbl.side_aborts),
         stitch_aborts = valpercent(statstbl.starts, statstbl.stitch_aborts),
         linktypes = statstbl_concat(statstbl.linktypes),
+        completed = valpercent(statstbl.starts, statstbl.completed),
     }
     setmetatable(values, {__index = statstbl})
 
     print(buildtemplate([[
   Started {{starts}}, side {{side_starts}}, stitch {{stitch_starts}}
-  Completed Link types: {{linktypes}}
+  Completed {{completed}} Link types: {{linktypes}}
   Aborted {{aborts}}, side {{side_aborts}}, stitch {{stitch_aborts}}]], values))
 
     local sortedkeys = statstbl_sortkeys(statstbl.abort_counts)
