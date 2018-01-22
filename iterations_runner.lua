@@ -40,6 +40,12 @@ local ffi = require("ffi")
 local json = require("json_nojit")
 local jitstats
 
+local hasjit = pcall(require, "jit")
+
+if hasjit then
+    require("jit.opt").start("maxtrace=10000", "maxmcode=10000")
+end
+
 function emit_per_core_measurements(name, num_cores, tbl, tbl_len)
     io.stdout:write(string.format('"%s": [', name))
 
