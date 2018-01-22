@@ -42,7 +42,7 @@ local jitstats
 
 local hasjit = pcall(require, "jit")
 
-if hasjit then
+if hasjit and pcall(require, "jit.opt")then
     require("jit.opt").start("maxtrace=10000", "maxmcode=10000")
 end
 
