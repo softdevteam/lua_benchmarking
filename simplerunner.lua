@@ -183,7 +183,11 @@ function runbench(name, count, scaling)
         table.insert(times, ticks)
         if jitstats then
             jitstats.getsnapshot(stop)
-            jstats[i] = jitstats.diffsnapshots(start, stop)
+            local iter_jstats = jitstats.diffsnapshots(start, stop)
+            jstats[i] = iter_jstats
+            if iter_jstats.starts ~= 0 then
+                io.write(iter_jstats.starts)
+            end
         end
     end
     -- Force a new line after our line of dots
