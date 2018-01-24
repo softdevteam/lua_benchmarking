@@ -119,10 +119,10 @@ SKIP = [
     "capnproto_decode:GC64:*", # Sometime crashes with GC64
     "capnproto_decode:RaptorJIT:*", # Sometimes crashes as well
     #"*:Normal:*",
-    #"*:GC64:*",
+    "*:GC64:*",
     "*:NoJIT:*",
-    #"*:DualNum:*",
-    #"*:RaptorJIT:*",
+    "*:DualNum:*",
+    "*:RaptorJIT:*",
     #"luacheck:*:*",
     #"luacheck_parser:*:*",
 ]
