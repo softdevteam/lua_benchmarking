@@ -167,9 +167,9 @@ Once more, on pain of death, all men depart.]]
   txt = txt..txt..txt..txt
   txt = txt..txt..txt..txt
   txt = txt..txt..txt..txt
-  
+
 collectgarbage()
-  
+
 function run_iter(count)
   for i=1,count do
     res = md5(txt)
