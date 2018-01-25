@@ -4,6 +4,25 @@ This repository collects together a number of open-source Lua benchmarks,
 suitable for quick or rigorous benchmarking. Contributions are welcome!
 
 
+## Quick benchmarking
+
+You can quickly run benchmarks by using your normal Lua interpreter to run
+`simplerunner.lua`. When called without arguments, this will run all benchmarks
+(taking some minutes) and print out means and confidence intervals which can be
+used for approximate comparisons. An example run looks as follows:
+
+```
+$ lua simplerunner.lua
+Running luacheck: ..............................
+  Mean: 1.120762 +/- 0.030216, min 1.004843, max 1.088270
+Running fannkuch_redux: ..............................
+  Mean: 0.128499 +/- 0.003281, min 0.119500, max 0.119847
+```
+
+You can run subsets of benchmarks or run benchmarks for longer (to achieve
+better quality statistics) -- see `simplerunner.lua -h` for more information.
+
+
 ## Adding new benchmarks
 
 New benchmarks should be put in the `benchmarks/` repository with an appropriate
