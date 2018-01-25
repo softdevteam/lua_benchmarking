@@ -27,14 +27,40 @@ better quality statistics) -- see `simplerunner.lua -h` for more information.
 
 New benchmarks should be put in the `benchmarks/` repository with an appropriate
 name. The "main" file should be called `bench.lua`, which must contain a
-function `run_iter` which takes a single parameter `n` which is the number of
+function `run_iter` which takes a scaling parameter `n` which is the number of
 times the benchmark should be run in a `for` loop (or equivalent) to make up a
 single "in-process iteration". The reason for this is that many benchmarks run
 too quickly for reliable measurements to be taken. However, the number of times
 a benchmark should be repeated to run "long enough" is machine dependent.
 `run_iter` is thus easily customisable for different situations. Roughly
 speaking, a single in-process iteration should run for around 1 second (with a
-minimum acceptable of 0.1s).
+minimum acceptable of 0.1s). Benchmarks' scaling parameters can be set in 
+`benchinfo.json`. For example, to set `binarytrees` scaling parameter to 2 
+and `nbody` to 10, one would write the following:
+
+```
+{
+  "scaling" : {
+    "binarytrees" : 2,
+    "nbody" : 10
+  }
+}
+```
+
+Some benchmarks can only run on some Lua variants or versions. In 
+`benchinfo.json` one can specify benchmark attributes. At the moment the only 
+attribute is `ffirequired` which, if set to true, means that only Lua 
+implementations with full FFI support will attempt to run the benchmark. For 
+example, to mark the `capnproto_encode` function as requiring the FFI one would 
+write the following:
+
+```
+{
+  "info" : {
+    "capnproto_encode" : { "ffirequired" : true }
+  }
+}
+```
 
 
 ## Benchmarking using Krun
