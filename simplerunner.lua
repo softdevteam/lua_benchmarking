@@ -309,7 +309,7 @@ local opt_alias = {
 function opt_map.help()
     io.stdout:write[[
 
-Usage: simplerunner [OPTION]...  benchmark, count
+Usage: simplerunner [OPTION] [<benchmark>] [<count>]
 
   -h, --help           Display this help text.
   -b, --bench name     Name of benchmark to run.
