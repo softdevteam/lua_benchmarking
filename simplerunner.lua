@@ -386,25 +386,11 @@ local function parseargs(args)
         load_jitstats()
     end
 
-    -- Check for proper number of arguments.
+    -- Check for a trailing list of benchmark names.
     local nargs = #args - args.argn + 1
-    if (not g_opt.bench or not g_opt.count) and nargs > 0 then
-        local arg1 = args[args.argn]
-        local num = tonumber(arg1)
-        if num then
-            -- Just a iteration count was passed; ignore any extra args after.
-            g_opt.count = num
-        else
-            -- We expect a benchmark name followed by an optional iteration count.
-            local arg2 = args[args.argn + 1]
-            table.insert(g_opt.benchmarks, arg1)
-            if arg2 then
-                num = tonumber(arg2)
-                if not num then
-                    opterror("Bad iteration count value '", arg2, "' to run benchmarks for")
-                end
-                g_opt.count = num
-            end
+    if (nargs > 0) then
+        for i = args.argn, #args do
+            table.insert(g_opt.benchmarks, args[i])
         end
     end
 
