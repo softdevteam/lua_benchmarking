@@ -30,7 +30,7 @@ for i=1, 1000 do
     if bit.band(i, 15) == 0 then
         data.b1 = false
     end
-    
+
     list[i] = data
 end
 

@@ -43,15 +43,15 @@ for i,path in ipairs(source_paths) do
     local luafile = io.open("benchdata/ZeroBraneSrc/"..path, "rb")
     local content = luafile:read("*all")
     table.insert(sources, content)
-    luafile:close()   
+    luafile:close()
 end
 
-local parser = require "luacheck.parser"   
-    
+local parser = require "luacheck.parser"
+
 function run_iter(count)
-    for i=1,count do  
+    for i=1,count do
         local asts = {}
-        
+
         for _, filebuf in ipairs(sources) do
             table.insert(asts, {parser.parse(filebuf)})
         end

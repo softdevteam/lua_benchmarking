@@ -11,7 +11,7 @@ VMS = {
 SKIP = [
     "luacheck:LuaV:*",
     "luacheck_parser:LuaV:*",
-    "capnproto_decode:LuaV:*", 
+    "capnproto_decode:LuaV:*",
     "capnproto_decode:LuaV:*", # Sometimes crashes as well
     "luafun:LuaV:*", # Uses capnproto to decode its data
     "md5:LuaV:*", # needs reimplmentation of the bit library

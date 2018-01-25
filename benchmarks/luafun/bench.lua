@@ -54,7 +54,7 @@ function init()
         local id = trace.id
         -- Use the total number of successful traces seen so far as the id for both aborted and successful traces.
         trace.id = tracecount
-        
+
         if not trace.abort then
             idmap[id] = tracecount
             tracecount = tracecount + 1

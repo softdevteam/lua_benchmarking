@@ -2,7 +2,7 @@ local json = require "json"
 
 local luafile = io.open("benchdata/simpledata.json", "rb")
 local text = luafile:read("*all")
-luafile:close()   
+luafile:close()
 
 function run_iter(n)
     for n=1, n do

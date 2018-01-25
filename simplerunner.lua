@@ -38,17 +38,17 @@ local function load_jitstats()
     return success
 end
 
-local function readfile(path) 
+local function readfile(path)
     local file, msg = io.open(path, "rb")
     if not file then
-        return false, msg 
+        return false, msg
     end
-    
+
     local success, text = pcall(file.read, file, "*all")
     if not success then
         return false, text
     end
-    
+
     pcall(file.close, file)
     return true, text
 end
@@ -62,7 +62,7 @@ local function readbenchinfo()
         print("", text)
         return false
     end
-    
+
     success, info = pcall(json.decode, text)
     if not success then
         print("Warning: Failed to parse benchinfo.json")
@@ -70,7 +70,7 @@ local function readbenchinfo()
         return false
     end
     scaling = info.scaling
-    
+
     return true
 end
 
@@ -225,7 +225,7 @@ function run_benchmark_list(benchmarks, count, options)
     if not options.norandomize then
         permute(benchmarks)
     end
-    
+
     for i, name in ipairs(benchmarks) do
         local times = runbench(name, count, options.scaling or scaling[name])
         local stats = calculate_stats(times, 2)
@@ -300,7 +300,7 @@ end
 
 -- Short aliases for long options.
 local opt_alias = {
-    h = "help", ["?"] = "help", 
+    h = "help", ["?"] = "help",
     b = "bench", c = "count", s = "scaling",
     e = "exclude",
 }
@@ -338,7 +338,7 @@ function opt_map.norandomize() g_opt.norandomize = true end
 function opt_map.jdump(args)
     local options = optparam(args)
     local outfile = options:find(",")
-    
+
     if outfile then
         g_opt.jdump_output = options:sub(outfile + 1)
         g_opt.jdump = options:sub(1, outfile-1)
@@ -419,9 +419,9 @@ local function parseargs(args)
         jit_dump = require("jit.dump")
         jit_dump.on(g_opt.jdump, g_opt.jdump_output)
     end
-    
+
     local benchmarks
-    
+
     if #g_opt.benchmarks > 0 then
         benchmarks = g_opt.benchmarks
     else

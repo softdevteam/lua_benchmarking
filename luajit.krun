@@ -17,7 +17,7 @@ VM_ENV = '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(os.path.join(DIR, "lua
 def make_env(vmdir):
   basedir = os.path.join(DIR, "builds", vmdir)
   return {
-    'LUA_PATH' : VM_ENV + '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(basedir) 
+    'LUA_PATH' : VM_ENV + '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(basedir)
   }
 
 HEAP_LIMIT = 2097152  # KiB

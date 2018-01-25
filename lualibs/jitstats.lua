@@ -7,7 +7,7 @@ local band = bit.band
 require("table.clear")
 require("table.new")
 
-local bcnames, bcname_lookup = {}, {} 
+local bcnames, bcname_lookup = {}, {}
 local bccount = 0
 for i = 0, #vmdef.bcnames-1, 6 do
     local name = string.sub(vmdef.bcnames, i, i+6):match "^%s*(.-)%s*$"
@@ -30,12 +30,12 @@ local traceerror_info = {
   {name = "BLACKL",  msg = "blacklisted", displaymsg = "Function or loop blacklisted"},
   {name = "RETRY",   msg = "retry recording"},
   {name = "NYIBC",   msg = "NYI: bytecode %d", displaymsg = "NYI: bytecode"},
-  
+
   -- Recording loop ops.
   {name = "LLEAVE",  msg = "leaving loop in root trace"},
   {name = "LINNER",  msg = "inner loop in root trace"},
   {name = "LUNROLL", msg = "loop unroll limit reached"},
-  
+
   -- Recording calls/returns.
   {name = "BADTYPE", msg = "bad argument type"},
   {name = "CJITOFF", msg = "JIT compilation disabled for function"},
@@ -43,23 +43,23 @@ local traceerror_info = {
   {name = "DOWNREC", msg = "down-recursion, restarting"},
   {name = "NYIFFU",  msg = "NYI: unsupported variant of FastFunc %s", displaymsg = "NYI: unsupported variant of FastFunc"},
   {name = "NYIRETL", msg = "NYI: return to lower frame"},
-  
+
   -- Recording indexed load/store.
   {name = "STORENN", msg = "store with nil or NaN key"},
   {name = "NOMM",    msg = "missing metamethod"},
   {name = "IDXLOOP", msg = "looping index lookup"},
   {name = "NYITMIX", msg = "NYI: mixed sparse/dense table"},
-  
+
   -- Recording C data operations. */
   {name = "NOCACHE", msg = "symbol not in cache"},
   {name = "NYICONV", msg = "NYI: unsupported C type conversion"},
   {name = "NYICALL", msg = "NYI: unsupported C function type"},
-  
+
   -- Optimizations.
   {name = "GFAIL",   msg = "guard would always fail"},
   {name = "PHIOV",   msg = "too many PHIs"},
   {name = "TYPEINS", msg = "persistent type instability"},
-  
+
   -- Assembler.
   {name = "MCODEAL", msg = "failed to allocate mcode memory"},
   {name = "MCODEOV", msg = "machine code too long"},
@@ -107,7 +107,7 @@ end
 local function fmterr(err, info)
     if type(err) == "number" then
         if type(info) == "function" then
-          info = fmtfunc(info) 
+          info = fmtfunc(info)
         end
         err = string.format(vmdef.traceerr[err], info)
     end
@@ -134,23 +134,23 @@ function vmevent.start(tr, func, pc, parentid, exitnum)
     curr_stitched = parentid and parentid > 0 and exitnum == -1
 
     debugprint("START(%d): parent = %d", tr, parentid or -1)
-    
+
     stats.starts = stats.starts + 1
     if curr_stitched then
         stats.stitch_starts = stats.stitch_starts + 1
     elseif parentid then
         stats.side_starts = stats.side_starts + 1
-    end 
+    end
 end
 
 --Trace Stopped
 function vmevent.stop(tr)
     local info = jutil.traceinfo(tr)
-     
+
     debugprint("STOP(%d): link = %s", tr, info.linktype)
-    
+
     stats.completed = stats.completed + 1
-    
+
     if curr_stitched then
         stats.stitch_completed = stats.stitch_completed + 1
     elseif curr_parentid then
@@ -163,7 +163,7 @@ end
 --Trace Aborted
 function vmevent.abort(tr, func, pc, code, errinfo)
     stats.aborts = stats.aborts + 1
-    
+
     local reason = ""
     if jitstats.debug then
         reason = fmterr(code, errinfo)
@@ -182,7 +182,7 @@ function vmevent.abort(tr, func, pc, code, errinfo)
     else
         debugprint("ABORT(%d): %s", tr, reason)
     end
-    
+
     local bc = funcbc(start_func, start_pc)
     local bcname = bc and bcnames[band(bc, 0xff)]
     if bcname == "IFUNCF" then
@@ -200,11 +200,11 @@ function vmevent.abort(tr, func, pc, code, errinfo)
     -- We sometimes don't get a bc for the stop location
     bc = funcbc(func, pc)
     local opcode = bc and band(bc, 0xff)
-    
+
     if code == traceerr.LLEAVE then
         debugprint("LLEAVE: %d/%s", opcode, bcnames[opcode])
     elseif code == traceerr.LUNROLL then
-        
+
     elseif code == traceerr.NYIBC then
         bcname = bcnames[errinfo]
         stats.nyi_bc[bcname] = (stats.nyi_bc[bcname] or 0) + 1
@@ -227,7 +227,7 @@ end
 
 local function vmeventcb(what, ...)
     local cb = vmevent[what]
-    if cb then 
+    if cb then
         cb(...)
     end
 end
@@ -278,11 +278,11 @@ function jitstats.reset(statstbl)
     statstbl.stitch_aborts = 0
     statstbl.stitch_completed = 0
     statstbl.side_starts = 0
-    statstbl.side_aborts = 0  
+    statstbl.side_aborts = 0
     statstbl.side_completed = 0
     statstbl.exits = 0
     statstbl.traceflush = 0
-    --Clear or initlize 
+    --Clear or initlize
     reset_subtables(statstbl)
     statstbl.func_blacklisted = 0
     statstbl.loop_blacklisted = 0
@@ -334,7 +334,7 @@ function jitstats.diffsnapshots(snap1, snap2)
         linktypes = {},
     }
 
-    for k, v in pairs(snap2) do   
+    for k, v in pairs(snap2) do
         if type(v) == "number" then
             result[k] = v - (snap1[k] or 0)
         end
@@ -348,8 +348,8 @@ function jitstats.diffsnapshots(snap1, snap2)
 end
 
 -- Checks if the current stats have changed compared to the snapshot passed in
-function jitstats.stats_changed(snapshot) 
-    return snapshot.starts ~= stats.starts or snapshot.exits ~= stats.exits or 
+function jitstats.stats_changed(snapshot)
+    return snapshot.starts ~= stats.starts or snapshot.exits ~= stats.exits or
            snapshot.traceflush ~= stats.traceflush
 end
 
@@ -379,7 +379,7 @@ local function table_keys(t)
 end
 
 local function statstbl_sortkeys(t, sorter)
-    local keys = table_keys(t) 
+    local keys = table_keys(t)
     table.sort(keys, function(k1, k2) return t[k1] > t[k2] end)
     return keys
 end
@@ -391,7 +391,7 @@ local function statstbl_concat(tbl)
         count = count + 1
         strings[count] = k.." = "..v
     end
-    
+
     return table.concat(strings, ", ")
 end
 
@@ -424,7 +424,7 @@ function jitstats.print(statstbl, msg)
     if statstbl.traceflush > 0 then
         printf("  Full trace flush(all traces) %d", statstbl.traceflush)
     end
-   
+
     local values = {
         side_starts = valpercent(statstbl.starts, statstbl.side_starts),
         stitch_starts = valpercent(statstbl.starts, statstbl.stitch_starts),

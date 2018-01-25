@@ -131,7 +131,7 @@ for BM_core = 1, BM_num_cores, 1 do
     end
 end
 
-local stats_start, stats_stop 
+local stats_start, stats_stop
 
 if BM_instrument then
     jitstats.start()
