@@ -1,14 +1,19 @@
+local jit, jit_util, jit_dump, jitstats
 local match, gmatch = string.match, string.gmatch
-package.path = package.path ..";lualibs/?/init.lua;lualibs/?.lua;lualibs/?/?.lua"
+
+local function add_package_path(basepath)
+    package.path = string.format("%s/?/init.lua;%s/?.lua;%s/?/?.lua;%s", basepath, basepath, basepath, package.path)
+end
+add_package_path("lualibs")
+
 local json = require("json_nojit")
 
-local hasjit, jit = pcall(require, "jit")
-local jit_util, jit_dump
+local success
+success, jit = pcall(require, "jit")
 
-if not hasjit or not pcall(jit.on) then
+if not success or not pcall(jit.on) then
     jit = nil
 else
-    local success
     success, jit_util = pcall(require, "jit.util")
 
     if not success then
@@ -17,10 +22,9 @@ else
 end
 
 if not pcall(require, "jit.vmdef") then
-    package.path = package.path ..";luajit_repo/src/?/init.lua;luajit_repo/src/?.lua;luajit_repo/src/?/?.lua"
+    add_package_path("luajit_repo/src")
 end
 
-local jitstats
 local function load_jitstats()
     local success
     success, jitstats = pcall(require, "jitstats")
@@ -137,6 +141,9 @@ end
 
 local function loadbench(name)
     assert(not run_iter, "another benchmark is still loaded")
+    -- Add the benchmark's directory to the module search path so it can correctly load any extra modules from there
+    add_package_path("benchmarks/"..name)
+    
     if loading_jitstats then
         jitstats.start()
     end
@@ -226,6 +233,8 @@ function run_benchmark_list(benchmarks, count, options)
         permute(benchmarks)
     end
 
+    local package_path = package.path
+    
     for i, name in ipairs(benchmarks) do
         local times = runbench(name, count, options.scaling or scaling[name])
         local stats = calculate_stats(times, 2)
@@ -235,6 +244,9 @@ function run_benchmark_list(benchmarks, count, options)
         end
         -- Try to clean away the current benchmark and its data, so the behaviour of the GC is more predictable for the next benchmark.
         collectgarbage("collect")
+
+        -- Restore the Lua module search path since we set it to the directory of the benchmark when we load it.
+        package.path = package_path
     end
 end
 
