@@ -42,31 +42,14 @@ class LuaJITVMDef(GenericScriptingVMDef):
                                        env=env, instrument=instrument)
         self.iterations_runner = "iterations_runner.lua"
 
-    def run_exec(self, interpreter, benchmark, iterations, param, heap_lim_k,
-                 stack_lim_k, force_dir=None, sync_disks=True):
-        return self._generic_scripting_run_exec(interpreter, benchmark,
-                                                iterations, param, heap_lim_k,
-                                                stack_lim_k,
+    def run_exec(self, interpreter, iterations, param, heap_lim_k,
+                 stack_lim_k, key, key_pexec_idx, force_dir=None,
+                 sync_disks=True):
+        return self._generic_scripting_run_exec(interpreter, iterations, param,
+                                                heap_lim_k, stack_lim_k, key,
+                                                key_pexec_idx,
                                                 force_dir=force_dir,
                                                 sync_disks=sync_disks)
-
-    def parse_instr_stderr_file(self, file_handle):
-        """Parse json encoded jit stats snapshots for each iterations.
-        """
-        iter_data = []
-        prefix_len = len(LuaJITVMDef.JIT_STATS_MARKER)
-
-        for line in file_handle:
-            if line.startswith(LuaJITVMDef.JIT_STATS_MARKER):
-              line = line[prefix_len:]
-              stats = json.loads(line)
-              iter_data.append(stats)
-            elif line.startswith(LuaJITVMDef.JIT_STATS_ALL_MARKER):
-              line = line[len(LuaJITVMDef.JIT_STATS_ALL_MARKER):]
-              stats_total = json.loads(line)
-
-        stats["total"] = stats_total
-        return {"jitstats": iter_data}
 
 VMS = {
     'Normal': {
