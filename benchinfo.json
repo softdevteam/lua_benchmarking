@@ -15,5 +15,13 @@
     "jsonlua_encode": 10,
     "jsonlua_decode": 200,
     "luafun": 4,
+  },
+
+  "info" : {
+    "capnproto_encode"  : { "ffirequired" : true },
+    "capnproto_decode" : { "ffirequired" : true },
+    "jsonlua_encode" : { "ffirequired" : true },
+    "jsonlua_decode" : { "ffirequired" : true },
+    "luafun" : { "ffirequired" : true },
   }
 }

@@ -1,6 +1,8 @@
 local json = require "json"
 local list = {}
 
+local bit = _G.bit or _G.bit32
+
 for i=1, 1000 do
     local data = {
         i0 = 32,

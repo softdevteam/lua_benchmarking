@@ -42,6 +42,16 @@ local function load_jitstats()
     return success
 end
 
+local function table_filter(t, f)
+    local result = {}
+    for _, v in ipairs(t) do
+        if not f(v) then
+            table.insert(result, v)
+        end
+    end
+    return result
+end
+
 local function readfile(path)
     local file, msg = io.open(path, "rb")
     if not file then
@@ -73,28 +83,9 @@ local function readbenchinfo()
         print("", info)
         return false
     end
-    scaling = info.scaling
-
+    benchinfo = info
     return true
 end
-
-local benchlist = {
-    "binarytrees",
-    "nbody",
-    "fasta",
-    "richards",
-    "spectralnorm",
-    "fannkuch_redux",
-    "md5",
-    "series",
-    "luacheck_parser",
-    "luacheck",
-    "capnproto_encode",
-    "capnproto_decode",
-    "jsonlua_encode",
-    "jsonlua_decode",
-    "luafun",
-}
 
 local function jitfunc(f, n)
     assert(jit_util, "cannot prejit with no jit.util")
@@ -237,7 +228,7 @@ function run_benchmark_list(benchmarks, count, options)
     
     for i, name in ipairs(benchmarks) do
         local times = runbench(name, count, options.scaling or scaling[name])
-        local stats = calculate_stats(times, 2)
+        local stats = calculate_stats(times)
         print(string.format("  Mean: %f +/- %f, min %f, max %f", stats.mean, stats.cinterval, stats.min, stats.max))
         if jitstats then
             jitstats.print()
@@ -371,6 +362,21 @@ local function parseopt(opt, args)
     f(args)
 end
 
+local hasffi = pcall(require, "ffi")
+
+local benchfilters = {
+    function(name)
+        local info = benchinfo and benchinfo.info[name]
+        
+        if not hasffi and info and info.ffirequired then
+            return true, "No ffi module"
+        end
+        return false
+    end,
+}
+
+local benchlist
+
 -- Parse arguments.
 local function parseargs(args)
     -- Default options.
@@ -426,20 +432,41 @@ local function parseargs(args)
         benchmarks = benchlist
     end
 
-    for _, name in ipairs(g_opt.excludes) do
-        for i, bench in ipairs(benchmarks) do
-            if bench == name then
-                table.remove(benchmarks, i)
-                break
+    benchmarks = table_filter(benchmarks, 
+        function(name) 
+            for _, bench in ipairs(g_opt.excludes) do
+                if bench == name then
+                    return true
+                end
             end
+            return false
         end
-    end
+    )
+    
+    benchmarks = table_filter(benchmarks, 
+        function(name) 
+            for _, filter in ipairs(benchfilters) do
+                local filtered, reason = filter(name)
+                if filtered then
+                    print("Skipping ".. name, reason)
+                    return true
+                end
+            end
+            return false
+        end
+    )
 
     run_benchmark_list(benchmarks, g_opt.count, g_opt)
 end
 
 if not readbenchinfo() then
-  scaling = {}
+    scaling = {}
+else
+    scaling = benchinfo.scaling
+    benchlist = {}
+    for k, _ in pairs(benchinfo.scaling) do
+        table.insert(benchlist, k)
+    end
 end
 
 if arg[1] then
