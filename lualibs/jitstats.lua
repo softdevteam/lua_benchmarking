@@ -9,8 +9,8 @@ require("table.new")
 
 local bcnames, bcname_lookup = {}, {}
 local bccount = 0
-for i = 0, #vmdef.bcnames-1, 6 do
-    local name = string.sub(vmdef.bcnames, i, i+6):match "^%s*(.-)%s*$"
+for i = 1, #vmdef.bcnames-1, 6 do
+    local name = string.sub(vmdef.bcnames, i, i+5):match "^%s*(.-)%s*$"
     bcnames[bccount] = name
     bcname_lookup[name] = bccount
     bccount = bccount + 1
@@ -125,15 +125,18 @@ local stats = jitstats.stats
 local vmevent = {}
 
 local curr_parentid, curr_stitched
-local start_pc, start_func
+local start_pc, start_func, start_bc
 -- Trace started
 function vmevent.start(tr, func, pc, parentid, exitnum)
     curr_parentid = parentid
     start_func = func
     start_pc = pc
     curr_stitched = parentid and parentid > 0 and exitnum == -1
+    start_bc = funcbc(start_func, start_pc)
 
-    debugprint("START(%d): parent = %d", tr, parentid or -1)
+    if jitstats.debug then
+        debugprint("START(%d): %s, parent = %d", tr, fmtfunc(func, pc), parentid or -1)
+    end
 
     stats.starts = stats.starts + 1
     if curr_stitched then
@@ -144,10 +147,12 @@ function vmevent.start(tr, func, pc, parentid, exitnum)
 end
 
 --Trace Stopped
-function vmevent.stop(tr)
+function vmevent.stop(tr, func, pc)
     local info = jutil.traceinfo(tr)
 
-    debugprint("STOP(%d): link = %s", tr, info.linktype)
+    if jitstats.debug then
+        debugprint("STOP(%d): %s, link = %s", tr, fmtfunc(func, pc or 0), info.linktype)
+    end
 
     stats.completed = stats.completed + 1
 
@@ -177,22 +182,24 @@ function vmevent.abort(tr, func, pc, code, errinfo)
     if curr_stitched then
         stats.stitch_aborts = stats.stitch_aborts + 1
     elseif curr_parentid then
-        debugprint("ABORT(%d): parent = %d, %s", tr, curr_parentid, reason)
+        debugprint("ABORT(%d): %s, reason %s, parent = %d", tr, fmtfunc(func, pc), reason, curr_parentid)
         stats.side_aborts = stats.side_aborts + 1
     else
-        debugprint("ABORT(%d): %s", tr, reason)
+        debugprint("ABORT(%d): %s, reason %s", tr, fmtfunc(func, pc), reason)
     end
 
     local bc = funcbc(start_func, start_pc)
     local bcname = bc and bcnames[band(bc, 0xff)]
     if bcname == "IFUNCF" then
+        assert(start_pc == 0 and bc ~= start_bc)
         if jitstats.debug then
-            debugprint("Function blacklisted: %s", funcinfo(func, pc).loc)
+            debugprint("Function blacklisted: %s", fmtfunc(func, pc))
         end
         stats.func_blacklisted = stats.func_blacklisted + 1
     elseif bcname == "ILOOP" or bcname == "IFORL" or bcname == "IITERL" then
+        assert(start_pc ~= 0 and bc ~= start_bc)
         if jitstats.debug then
-            debugprint("Loop blacklisted: %s", funcinfo(func, pc).loc)
+            debugprint("Loop blacklisted: %s", funcinfo(func, pc))
         end
         stats.loop_blacklisted = stats.loop_blacklisted + 1
     end
