@@ -1,45 +1,9 @@
-local jit, jit_util, jit_dump, jitstats
+local jit, jit_util, jit_dump, jitstats, json
 local match, gmatch = string.match, string.gmatch
+local benchinfo, scaling
 
 local function add_package_path(basepath)
     package.path = string.format("%s/?/init.lua;%s/?.lua;%s/?/?.lua;%s", basepath, basepath, basepath, package.path)
-end
-add_package_path("lualibs")
-
-local json = require("json_nojit")
-
-local success
-success, jit = pcall(require, "jit")
-
-if not success or not pcall(jit.on) then
-    jit = nil
-else
-    success, jit_util = pcall(require, "jit.util")
-
-    if not success then
-        jit_util = nil
-    end
-end
-
-if not pcall(require, "jit.vmdef") then
-    add_package_path("luajit_repo/src")
-end
-
-local function load_jitstats()
-    local success
-    success, jitstats = pcall(require, "jitstats")
-
-    if not success then
-      print("Warning: Failed to load jitstats")
-      -- print the error message as well
-      print(" ", jitstats)
-      jitstats = nil
-    else
-      print("Loaded jitstats")
-      require("table.new")
-    end
-
-    return success
 end
 
 local function table_filter(t, f)
@@ -59,15 +23,129 @@ local function readfile(path)
     end
 
     local success, text = pcall(file.read, file, "*all")
-    if not success then
-        return false, text
-    end
-
-    pcall(file.close, file)
-    return true, text
+    file.close(file)  
+    return success, text
 end
 
-local function readbenchinfo()
+local function loadjson(path)
+    local success, text, data
+
+    success, text = readfile(path)
+    if not success then
+        return false, "Failed to load '"..path.."' "..text
+    end
+
+    success, data = pcall(json.decode, text)
+    if not success then
+        return false, "Failed to parse '"..path.."' "..data
+    end
+    return true, data
+end
+
+local runner = {
+    jsonlib = "json_nojit"
+}
+local loaded = false
+local startimer, stoptimer
+
+function runner.init()
+    if loaded then
+        return true
+    end
+    loaded = true
+    add_package_path("lualibs") 
+    runner.loadbenchinfo()
+    
+    success, jit = pcall(require, "jit")   
+    local hasjit = success and pcall(jit.on)
+
+    if not hasjit then
+        startimer, stoptimer = runner.maketimer(os.clock)
+        jit = nil
+        return true
+    end
+    
+    jit.off(runner.jitfunc)
+    jit.off(runner.runbench)
+
+    -- Raptor jit removed jit.util so only try to use if its available
+    success, jit_util = pcall(require, "jit.util")
+
+    if success then
+        if not pcall(require, "jit.vmdef") then
+            add_package_path("luajit_repo/src")
+        end
+    else
+        jit_util = nil
+    end
+
+    local timeloaded, timelib = pcall(require, "time")
+    -- jit.util is needed so we can check the bytecode has changed for the timer functions being pre JIT'ed.
+    if timeloaded and jit_util then
+        startimer, stoptimer = runner.maketimer(timelib.clock)
+        -- Force the timer functions to get JIT'ed so they don't go through the slow
+        -- ffi path in the interpreter thats data driven.
+        runner.jitfunc(startimer)
+        runner.jitfunc(stoptimer)
+    else
+        startimer, stoptimer = runner.maketimer(os.clock)
+        -- os.clock can't be jit'ed so try to keep timer a bit more stable by 
+        -- stopping the time randomly being inflated by trace creation in them.
+        jit.off(startimer)
+        jit.off(stoptimer)
+    end
+    
+    return true
+end
+
+function runner.maketimer(clock)
+    local start_ticks
+
+    local function startimer()
+        start_ticks = clock()
+        return
+    end
+    
+    local function stoptimer()
+        local stop_ticks = clock()
+        return stop_ticks - start_ticks
+    end
+    
+    return startimer, stoptimer
+end
+
+function runner.loadbenchinfo()
+    if benchinfo then
+        return
+    end
+
+    if not json then
+        json = require(runner.jsonlib)
+    end
+
+    local success
+    success, info = loadjson("benchinfo.json")
+    
+    if not success then
+        error("Error while geting benchmark info: "..info)
+    end
+
+    runner.setbenchinfo(info)
+end
+
+function runner.setbenchinfo(info)
+    assert(type(info.scaling) == "table", "benchinfo missing benchmark scaling values")
+    assert(type(info.info) == "table", "benchinfo missing benchmark info table")
+
+    benchinfo = info
+    scaling = info.scaling
+    benchlist = {}
+    for k, _ in pairs(info.scaling) do
+        table.insert(benchlist, k)
+    end
+end
+
+function runner.readbenchinfo()
     local success, text, info
 
     success, text = readfile("benchinfo.json")
@@ -83,11 +161,27 @@ local function readbenchinfo()
         print("", info)
         return false
     end
-    benchinfo = info
-    return true
+    return true, info
 end
 
-local function jitfunc(f, n)
+function runner.load_jitstats()
+    local success
+    success, jitstats = pcall(require, "jitstats")
+
+    if not success then
+      print("Warning: Failed to load jitstats")
+      -- print the error message as well
+      print(" ", jitstats)
+      jitstats = nil
+    else
+      print("Loaded jitstats")
+      require("table.new")
+    end
+
+    return success
+end
+
+function runner.jitfunc(f, n)
     assert(jit_util, "cannot prejit with no jit.util")
     n = n or 200
     local startbc = bit.band(jit_util.funcbc(f, 0), 0xff)
@@ -99,38 +193,7 @@ local function jitfunc(f, n)
     assert(stopbc == startbc + 2, "failed to prejit method")
 end
 
-if jit then
-    jit.off(jitfunc)
-end
-
-local start_ticks
-local clock
-
-local function startimer()
-    start_ticks = clock()
-    return
-end
-
-local function stoptimer()
-    local stop_ticks = clock()
-    return stop_ticks - start_ticks
-end
-
-local timeloaded, time = pcall(require, "time")
-if timeloaded then
-    clock = time.clock
-
-    if jit_util then
-        -- Force the timer functions to get JIT'ed so they don't go through the slow ffi path in the interpreter thats data driven
-        jitfunc(startimer)
-        jitfunc(stoptimer)
-    end
-else
-    -- Fallback to os.clock which uses the libc 'clock' function. CLOCKS_PER_SEC is normally 1Mhz on Linux but on windows it was 1khz.
-    clock = os.clock
-end
-
-local function loadbench(name)
+function runner.loadbench(name)
     assert(not run_iter, "another benchmark is still loaded")
     -- Add the benchmark's directory to the module search path so it can correctly load any extra modules from there
     add_package_path("benchmarks/"..name)
@@ -150,9 +213,9 @@ local function loadbench(name)
     end
 end
 
-function runbench(name, count, scaling)
+function runner.runbench(name, count, scaling)
     scaling = scaling or 1
-    loadbench(name)
+    runner.loadbench(name)
 
     local jstats, times
     local start, stop = {}, {}
@@ -201,11 +264,7 @@ function runbench(name, count, scaling)
     return times, jstats
 end
 
-if jit then
-    jit.off(runbench)
-end
-
-function permute(tab)
+local function permute(tab)
     local count = #tab
     math.randomseed(os.time())
     for i = count, 1, -1 do
@@ -216,7 +275,7 @@ function permute(tab)
     end
 end
 
-function run_benchmark_list(benchmarks, count, options)
+function runner.run_benchmark_list(benchmarks, count, options)
     assert(#benchmarks ~= 0, "Empty benchmark list")
     options = options or {}
 
@@ -227,8 +286,8 @@ function run_benchmark_list(benchmarks, count, options)
     local package_path = package.path
     
     for i, name in ipairs(benchmarks) do
-        local times = runbench(name, count, options.scaling or scaling[name])
-        local stats = calculate_stats(times)
+        local times = runner.runbench(name, count, options.scaling or scaling[name])
+        local stats = runner.calculate_stats(times)
         print(string.format("  Mean: %f +/- %f, min %f, max %f", stats.mean, stats.cinterval, stats.min, stats.max))
         if jitstats then
             jitstats.print()
@@ -241,7 +300,7 @@ function run_benchmark_list(benchmarks, count, options)
     end
 end
 
-function calculate_stats(times)
+function runner.calculate_stats(times)
     local stats = {}
     local count = #times
 
@@ -361,23 +420,8 @@ local function parseopt(opt, args)
     f(args)
 end
 
-local hasffi = pcall(require, "ffi")
-
-local benchfilters = {
-    function(name)
-        local info = benchinfo and benchinfo.info[name]
-        
-        if not hasffi and info and info.ffirequired then
-            return true, "No ffi module"
-        end
-        return false
-    end,
-}
-
-local benchlist
-
 -- Parse arguments.
-local function parseargs(args)
+function runner.parse_commandline(args)
     -- Default options.
     g_opt.count = 30
     g_opt.benchmarks = {}
@@ -399,10 +443,6 @@ local function parseargs(args)
         end
     until false
 
-    if g_opt.jitstats then
-        load_jitstats()
-    end
-
     -- Check for a trailing list of benchmark names.
     local nargs = #args - args.argn + 1
     if (nargs > 0) then
@@ -411,20 +451,7 @@ local function parseargs(args)
         end
     end
 
-    if g_opt.nogc then
-        print("Garbage collector disabled")
-        -- Make sure the GC is not in the middle of phase before we switch it off
-        collectgarbage("collect")
-        collectgarbage("stop")
-    end
-
-    if g_opt.jdump then
-        jit_dump = require("jit.dump")
-        jit_dump.on(g_opt.jdump, g_opt.jdump_output)
-    end
-
     local benchmarks
-
     if #g_opt.benchmarks > 0 then
         benchmarks = g_opt.benchmarks
     else
@@ -442,34 +469,63 @@ local function parseargs(args)
         end
     )
     
-    benchmarks = table_filter(benchmarks, 
-        function(name) 
-            for _, filter in ipairs(benchfilters) do
-                local filtered, reason = filter(name)
-                if filtered then
-                    print("Skipping ".. name, reason)
-                    return true
-                end
-            end
-            return false
-        end
-    )
-
-    run_benchmark_list(benchmarks, g_opt.count, g_opt)
+    return benchmarks, g_opt
 end
 
-if not readbenchinfo() then
-    scaling = {}
-else
-    scaling = benchinfo.scaling
-    benchlist = {}
-    for k, _ in pairs(benchinfo.scaling) do
-        table.insert(benchlist, k)
+function runner.processoptions(options)
+    if options.jitstats then
+        runner.load_jitstats()
+    end
+
+    if options.nogc then
+        print("Garbage collector disabled")
+        -- Make sure the GC is not in the middle of phase before we switch it off
+        collectgarbage("collect")
+        collectgarbage("stop")
+    end
+
+    if options.jdump then
+        jit_dump = require("jit.dump")
+        jit_dump.on(options.jdump, options.jdump_output)
     end
 end
 
+local hasffi = pcall(require, "ffi")
+
+runner.benchfilters = {
+    function(name)
+        local info = benchinfo.info[name]
+        
+        if not hasffi and info and info.ffirequired then
+            return true, "No ffi module"
+        end
+        return false
+    end,
+}
+
+local function check_filters(name) 
+    for _, filter in ipairs(runner.benchfilters) do
+        local filtered, reason = filter(name)
+        if filtered then
+            print("Skipping ".. name, reason)
+            return true
+        end
+    end
+    return false
+end
+
+function runner.filter_benchmarks(benchmarks)
+    return table_filter(benchmarks, check_filters)
+end
+
+runner.init()
+
 if arg[1] then
-    parseargs(arg)
+    local benchmarks, options = runner.parse_commandline(arg)
+    runner.processoptions(options)
+    benchmarks = runner.filter_benchmarks(benchmarks)
+    runner.run_benchmark_list(benchmarks, options.count, options)
 else
-    run_benchmark_list(benchlist, 30)
+    local benchmarks = runner.filter_benchmarks(benchlist)
+    runner.run_benchmark_list(benchmarks, 30)
 end
