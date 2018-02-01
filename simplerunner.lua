@@ -241,13 +241,12 @@ function run_benchmark_list(benchmarks, count, options)
     end
 end
 
-function calculate_stats(times, start)
+function calculate_stats(times)
     local stats = {}
-    start = start or 1
-    local count = #times - start-1
+    local count = #times
 
     local min, max, total = 10000, 0, 0
-    for i = start, #times do
+    for i = 1, count do
         local time = times[i]
         total = total + time
         min = math.min(time, min)
@@ -259,7 +258,7 @@ function calculate_stats(times, start)
     stats.mean = total / count
 
     local variance = 0
-    for i = start, count do
+    for i = 1, count do
         local diff = times[i] - stats.mean
         variance = variance + diff*diff
     end
