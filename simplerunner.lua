@@ -236,6 +236,16 @@ function runner.jitfunc(f, n)
     assert(stopbc == startbc + 2, "failed to prejit method")
 end
 
+function runner.load_jitlog()
+    success, jitlog = pcall(require, "jitlog")
+
+    if not success then
+        print("Error: Failed to load jitlog")
+        os.exit(1)
+    end
+    jitlog.start()
+end
+
 function runner.loadbench(name)
     assert(not run_iter, "another benchmark is still loaded")
     -- Add the benchmark's directory to the module search path so it can correctly load any extra modules from there
@@ -243,6 +253,9 @@ function runner.loadbench(name)
     
     if loading_jitstats then
         jitstats.start()
+    end
+    if jitlog then
+        jitlog.addmarker("JITLOG(LOAD): "..name)
     end
     dofile("benchmarks/"..name.."/bench.lua")
 
@@ -288,10 +301,16 @@ function runner.runbench(name, count, scaling)
         if jitstats then
             jitstats.getsnapshot(start)
         end
+        if jitlog then
+            jitlog.addmarker("JITLOG(BEGIN): "..name)
+        end
         startimer()
         run_iter(scaling)
         local ticks = stoptimer()
         table.insert(times, ticks)
+        if jitlog then
+            jitlog.addmarker("JITLOG(END): "..name)
+        end
         if jitstats then
             jitstats.getsnapshot(stop)
             local iter_jstats = jitstats.diffsnapshots(start, stop)
@@ -301,6 +320,10 @@ function runner.runbench(name, count, scaling)
             end
         end
     end
+    if jitlog then
+        jitlog.addmarker("JITLOG(STOP): "..name)
+    end
+    
     -- Force a new line after our line of dots
     io.write("\n")
     io.flush()
@@ -393,6 +416,12 @@ function runner.subprocess_run(benchmark, count, scaling, parent_options)
     print("  " .. runner.fmtstats(stats))
     if jitstats then
         jitstats.print()
+    end
+
+    if jitlog then
+        local jlogname = benchmark..".jlog"
+        print("Saving jitlog to "..jlogname)
+        jitlog.save(jlogname)
     end
 
     os.exit(0)
@@ -511,6 +540,7 @@ function opt_map.jdump(args)
         g_opt.jdump = options
     end
 end
+function opt_map.jitlog(args) g_opt.jitlog = true end
 
 ------------------------------------------------------------------------------
 
@@ -586,6 +616,10 @@ function runner.processoptions(options)
     if options.jitstats then
         runner.load_jitstats()
     end
+
+	if g_opt.jitlog then
+		runner.load_jitlog()
+	end
 
     if options.nogc then
         print("Garbage collector disabled")
