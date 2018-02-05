@@ -231,6 +231,13 @@ function runner.runbench(name, count, scaling)
     io.write("Running "..name..": ")
     io.flush()
 
+    -- Reset all the hot counters to their starting values right before we run the benchmark
+    if jit then
+        -- lj_dispatch_update triggers a hotcount reset when the JIT is turned off and back on again.
+        jit.off()
+        jit.on()
+    end
+
     local run_iter = _G.run_iter
     for i = 1, count do
         io.write(".")
