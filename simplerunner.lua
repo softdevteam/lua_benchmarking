@@ -1,9 +1,17 @@
 local jit, jit_util, jit_dump, jitstats, json
 local match, gmatch = string.match, string.gmatch
-local benchinfo, scaling
+local benchinfo, scaling, oskind
 
 local function add_package_path(basepath)
+    local ext
+    if oskind == "Windows" then
+        ext = "dll"
+    else
+        ext = "so"
+    end
+
     package.path = string.format("%s/?/init.lua;%s/?.lua;%s/?/?.lua;%s", basepath, basepath, basepath, package.path)
+    package.cpath = string.format("%s/?.%s;%s/?/?.%s;%s", basepath, ext, basepath, ext, package.cpath)
 end
 
 local function table_filter(t, f)
@@ -53,7 +61,8 @@ function runner.init()
         return true
     end
     loaded = true
-    add_package_path("lualibs") 
+    oskind = runner.detectos()
+    add_package_path("lualibs")
     runner.loadbenchinfo()
     
     success, jit = pcall(require, "jit")   
@@ -96,6 +105,20 @@ function runner.init()
     end
     
     return true
+end
+
+function runner.detectos()
+    local success, ffi = pcall(require, "ffi")  
+    if success then
+        return ffi.os
+    end
+
+    -- Fallback to the file extension of binary Lua modules
+    if string.find(package.cpath, "%.dll") then
+        return "Windows"
+    else
+        return "Linux"
+    end
 end
 
 function runner.maketimer(clock)
@@ -291,6 +314,7 @@ function runner.run_benchmark_list(benchmarks, count, options)
     end
 
     local package_path = package.path
+    local package_cpath = package.cpath
     
     for i, name in ipairs(benchmarks) do
         local times = runner.runbench(name, count, options.scaling or scaling[name])
@@ -304,6 +328,7 @@ function runner.run_benchmark_list(benchmarks, count, options)
 
         -- Restore the Lua module search path since we set it to the directory of the benchmark when we load it.
         package.path = package_path
+        package.cpath = package_cpath
     end
 end
 
