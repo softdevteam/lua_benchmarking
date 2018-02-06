@@ -62,6 +62,11 @@ write the following:
 }
 ```
 
+If your benchmark requires additional building / installation, you can add an 
+executable build.sh file in your benchmark directory. If present, this will be
+run during the initial build of the entire repository. Your build.sh file is 
+responsible for determining if previous builds are present and need to be 
+replaced etc.
 
 ## Benchmarking using Krun
 

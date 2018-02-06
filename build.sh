@@ -99,3 +99,10 @@ if [ ${BUILDALL} ]; then
   cp lua-vermelha/luav ${ljbins}/lua-vermelha/luav
 fi
 
+echo "--------------Running benchmark build scripts-------------------------"
+
+for subdir in benchmarks/*; do
+  if [ -f "$subdir/build.sh" ]; then
+    (cd "$subdir" && ./build.sh)
+  fi
+done
