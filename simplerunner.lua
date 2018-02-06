@@ -1,4 +1,4 @@
-local jit, jit_util, jit_dump, jitstats, json
+local jit, jit_util, jit_dump, jitstats, json, lfs
 local match, gmatch = string.match, string.gmatch
 local benchinfo, scaling, oskind
 
@@ -63,7 +63,10 @@ function runner.init()
     loaded = true
     oskind = runner.detectos()
     add_package_path("lualibs")
+    add_package_path("rocks/modules")
     runner.loadbenchinfo()
+
+    lfs = require("lfs")
     
     success, jit = pcall(require, "jit")   
     local hasjit = success and pcall(jit.on)
@@ -218,8 +221,14 @@ end
 
 function runner.loadbench(name)
     assert(not run_iter, "another benchmark is still loaded")
+    local benchdir = "benchmarks/"..name
     -- Add the benchmark's directory to the module search path so it can correctly load any extra modules from there
-    add_package_path("benchmarks/"..name)
+    add_package_path(benchdir)
+    add_package_path(benchdir.."/rocks/modules")
+    
+    if not lfs.attributes(benchdir.."/rocks", "mode") then
+        --os.execute("")
+    end
     
     if loading_jitstats then
         jitstats.start()
