@@ -84,19 +84,31 @@ local BM_benchmark = arg[1]
 local BM_iters = tonumber(arg[2])
 local BM_param = tonumber(arg[3])
 local BM_debug = tonumber(arg[4]) > 0
-local BM_instrument = tonumber(arg[5]) > 0
+local BM_instrument = #arg >= 5
+local BM_instdatadir = arg[5]
+local BM_key = arg[6]
+local BM_pexecidx = arg[7]
 
-if BM_instrument then
-    jitstats = require("jitstats")
-end
-
-if #arg ~= 5 then
-    io.stderr:write("usage: iterations_runner.lua <benchmark> <# of iterations> " ..
-                    "<benchmark param> <debug flag> <instrument flag>")
+if #arg ~= 4 and #arg ~= 7 then
+    io.stderr:write("usage: iterations_runner.lua <benchmark> " ..
+                    "<# of iterations> <benchmark param>\n           " ..
+                    "<debug flag> [instrumentation dir] [key] " ..
+                    "[key pexec index]\n\n")
+    io.stderr:write("Arguments in [] are for instrumentation mode only.\n")
     os.exit(1)
 end
 
+if BM_instrument then
+    jitlog = require("jitlog")
+    jitlog.start()
+    jitlog.addmarker("LOAD(START)")
+end
+
 dofile(BM_benchmark)
+
+if BM_instrument then
+    jitlog.addmarker("LOAD(END)")
+end
 
 krun_init()
 local BM_num_cores = krun_get_num_cores()
@@ -134,11 +146,7 @@ end
 local stats_start, stats_stop
 
 if BM_instrument then
-    jitstats.start()
-    stats_start = {}
-    stats_stop = {}
-    jitstats.reset(stats_start)
-    jitstats.reset(stats_stop)
+    jitlog.addmarker("BENCH(START)")
 end
 
 -- Main loop
@@ -147,7 +155,7 @@ for BM_i = 1, BM_iters, 1 do
         io.stderr:write(string.format("[iterations_runner.lua] iteration %d/%d\n", BM_i, BM_iters))
     end
     if BM_instrument then
-        jitstats.getsnapshot(stats_start)
+        jitlog.addmarker("BEGIN")
     end
 
     -- Start timed section
@@ -157,8 +165,7 @@ for BM_i = 1, BM_iters, 1 do
     -- End timed section
 
     if BM_instrument then
-        jitstats.getsnapshot(stats_stop)
-        io.stderr:write("@@@ JIT_STATS "..json.encode(jitstats.diffsnapshots(stats_start, stats_stop)).."\n")
+        jitlog.addmarker("END")
     end
 
     -- Compute deltas
@@ -178,8 +185,8 @@ for BM_i = 1, BM_iters, 1 do
 end
 
 if BM_instrument then
-    -- Note this includes stats generated from the main benchmark loop above as well
-    io.stderr:write("@@@ JIT_STATS_ALL "..json.encode(jitstats.getsnapshot()).."\n")
+    jitlog.addmarker("BENCH(END)")
+    jitlog.save(string.format("%s/%s_%d.jlog", BM_instdatadir, BM_key, BM_pexecidx):gsub(":", "_"))
 end
 
 krun_done()
