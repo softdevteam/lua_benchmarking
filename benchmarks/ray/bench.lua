@@ -1,3 +1,5 @@
+-- "I hereby put all Lua/LuaJIT tests and benchmarks that I wrote under the public domain." Mike Pall
+-- https://github.com/LuaJIT/LuaJIT-test-cleanup
 local sqrt = math.sqrt
 local huge = math.huge
 
@@ -109,27 +111,32 @@ local function create(level, centre, radius)
 end
 
 
-local level, n, ss = tonumber(arg[1]) or 9, tonumber(arg[2]) or 256, 4
+local level, ss = 9, 4
 local iss = 1/ss
 local gf = 255/(ss*ss)
 
-io.write(("P5\n%d %d\n255\n"):format(n, n))
-local light = { unitise(-1, -3, 2) }
-ilight = { -light[1], -light[2], -light[3] }
-local camera = { 0, 0, -4 }
-local dir = { 0, 0, 0 }
-
-local scene = create(level, {0, -1, 0}, 1)
-
-for y = n/2-1, -n/2, -1 do
-  for x = -n/2, n/2-1 do
-    local g = 0
-    for d = y, y+.99, iss do
-      for e = x, x+.99, iss do
-        dir[1], dir[2], dir[3] = unitise(e, d, n)
-        g = g + ray_trace(light, camera, dir, scene) 
+function run_iter(n)
+  local light = { unitise(-1, -3, 2) }
+  ilight = { -light[1], -light[2], -light[3] }
+  local camera = { 0, 0, -4 }
+  local dir = { 0, 0, 0 }
+  
+  
+  local scene = create(level, {0, -1, 0}, 1)
+  local ret
+  
+  for y = n/2-1, -n/2, -1 do
+    for x = -n/2, n/2-1 do
+      local g = 0
+      for d = y, y+.99, iss do
+        for e = x, x+.99, iss do
+          dir[1], dir[2], dir[3] = unitise(e, d, n)
+          g = g + ray_trace(light, camera, dir, scene) 
+        end
       end
+      io.write_devnull(string.char(math.floor(0.5 + g*gf)))
     end
-    io.write(string.char(math.floor(0.5 + g*gf)))
   end
+  return ret
 end
+

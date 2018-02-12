@@ -95,6 +95,28 @@ BENCHMARKS = {
     "jsonlua_encode": 10,
     "jsonlua_decode": 200,
     "luafun": 4,
+
+    "array3d": 180,
+    "coroutine_ring" : 3300000,
+    "euler14" : 3500000,
+    "nsieve" : 9,
+    "nsieve_bit" : 9,
+    "life" : 2000,
+    "mandelbrot" : 2000,
+    "mandelbrot_bit" : 2000,
+    "ray" : 128,
+    "meteor" : 1,
+    "pidigits" : 1150,
+    "recursive_ack" : 10,
+    "recursive_fib" : 37,
+    "partialsums" : 2000000,
+    "knucleotide" : 1,
+    "scimark_fft" : 2500,
+    "scimark_lu"  : 450,
+    "scimark_sor"  : 3100,
+    "scimark_sparse" : 12000,
+    "scimark_mc" : 13000000,
+    "revcomp" : 45,
 }
 
 # list of "bench:vm:variant"

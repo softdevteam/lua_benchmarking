@@ -1,3 +1,7 @@
+-- "I hereby put all Lua/LuaJIT tests and benchmarks that I wrote under the public domain." Mike Pall
+-- https://github.com/LuaJIT/LuaJIT-test-cleanup
+require"table.new"
+require("table.clear")
 
 local function nsieve(p, m)
   for i=2,m do p[i] = true end
@@ -11,11 +15,19 @@ local function nsieve(p, m)
   return count
 end
 
-local N = tonumber(arg and arg[1]) or 1
-if N < 2 then N = 2 end
-local primes = {}
+local primes
 
-for i=0,2 do
-  local m = (2^(N-i))*10000
-  io.write(string.format("Primes up to %8d %8d\n", m, nsieve(primes, m)))
+function run_iter(N)
+  if N < 2 then N = 2 end
+  local size = (2^N)*10000
+  -- The GC is not able to handle us recreating this table each time. it screws with the GC heap size trigger values 
+  -- until we hit 2gb and crash
+  if not primes then
+    primes = table.new(size, 0)
+  end
+  table.clear(primes)
+  for i=0,2 do
+    local m = (2^(N-i))*10000
+    nsieve(primes, m)
+  end
 end

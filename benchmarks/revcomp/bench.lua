@@ -1,4 +1,5 @@
-
+-- "I hereby put all Lua/LuaJIT tests and benchmarks that I wrote under the public domain." Mike Pall
+-- https://github.com/LuaJIT/LuaJIT-test-cleanup
 local sub = string.sub
 iubc = setmetatable({
   A="T", C="G", B="V", D="H", K="M", R="Y",
@@ -9,11 +10,10 @@ iubc = setmetatable({
 }, { __index = function(t, s)
   local r = t[sub(s, 2)]..t[sub(s, 1, 1)]; t[s] = r; return r end })
 
+
 local wcode = [=[
-return function(t, n)
-  if n == 1 then return end
-  local iubc, sub, write = iubc, string.sub, io.write
-  local s = table.concat(t, "", 1, n-1)
+return function(s)
+  local iubc, sub, write = iubc, string.sub, io.write_devnull
   for i=#s-59,1,-60 do
     write(]=]
 for i=59,3,-4 do wcode = wcode.."iubc[sub(s, i+"..(i-3)..", i+"..i..")], " end
@@ -28,10 +28,23 @@ end
 ]=]
 local writerev = loadstring(wcode)()
 
-local t, n = {}, 1
-for line in io.lines() do
-  local c = sub(line, 1, 1)
-  if c == ">" then writerev(t, n); io.write(line, "\n"); n = 1
-  elseif c ~= ";" then t[n] = line; n = n + 1 end
+
+local function load_data(path)
+  local t, n = {}, 1
+  for line in io.lines(path) do
+    local c = sub(line, 1, 1)
+    if c == ">" then writerev(t, n);  n = 1
+    elseif c ~= ";" then t[n] = line; n = n + 1 end
+  end
+  return table.concat(t, "")
 end
-writerev(t, n)
+
+local data = load_data("benchdata/fasta_output.txt")
+
+function run_iter(n)
+  local ret
+  for i = 1, n do
+    ret = (writerev(data, n))
+  end
+  return ret
+end

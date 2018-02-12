@@ -1,4 +1,5 @@
-
+-- "I hereby put all Lua/LuaJIT tests and benchmarks that I wrote under the public domain." Mike Pall
+-- https://github.com/LuaJIT/LuaJIT-test-cleanup
 local function array_set(self, x, y, z, p)
   assert(x >= 0 and x < self.nx, "x outside PA")
   assert(y >= 0 and y < self.ny, "y outside PA")
@@ -48,12 +49,14 @@ local function array_new(nx, ny, nz, packed)
   }
 end
 
-local dim = tonumber(arg and arg[1]) or 300 -- Array dimension dim^3
-local packed = arg and arg[2] == "packed"   -- Packed image or flat
-local arr = array_new(dim, dim, dim, packed)
+local packed = true   -- Packed image or flat
 
-for x,y,z in arr:points() do
-  arr:set(x, y, z, x*x)
+function run_iter(scaling)
+  local dim = scaling -- Array dimension dim^3
+  local arr = array_new(dim, dim, dim, packed)
+  for x,y,z in arr:points() do
+    arr:set(x, y, z, x*x)
+  end
+  assert(arr.image[dim^3-1] == (dim-1)^2)
 end
-assert(arr.image[dim^3-1] == (dim-1)^2)
 

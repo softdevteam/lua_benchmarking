@@ -3,15 +3,10 @@
 -- modified to use ANSI terminal escape sequences
 -- modified to use for instead of while
 
-local write=io.write
+local write = io.write_devnull
 
 ALIVE="¥"	DEAD="þ"
 ALIVE="O"	DEAD="-"
-
-function delay() -- NOTE: SYSTEM-DEPENDENT, adjust as necessary
-  for i=1,10000 do end
-  -- local i=os.clock()+1 while(os.clock()<i) do end
-end
 
 function ARRAY2D(w,h)
   local t = {w=w,h=h}
@@ -82,7 +77,7 @@ FISH = { 0,1,1,1,1,1,0,0,0,1,0,0,0,0,1,1,0,0,1,0; w=5,h=4 }
 BUTTERFLY = { 1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,1,0,1,0,1,1,0,0,0,1; w=5,h=5 }
 
 -- the main routine
-function LIFE(w,h)
+function LIFE(w,h, n)
   -- create two arrays
   local thisgen = CELLS(w,h)
   local nextgen = CELLS(w,h)
@@ -103,9 +98,12 @@ function LIFE(w,h)
     thisgen:draw()
     write("Life - generation ",gen,"\n")
     gen=gen+1
-    if gen>2000 then break end
-    --delay()		-- no delay
+    if gen > n then
+      break 
+    end
   end
 end
 
-LIFE(40,20)
+function run_iter(N)
+    LIFE(40,20, N)
+end

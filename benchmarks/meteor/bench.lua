@@ -1,3 +1,5 @@
+-- "I hereby put all Lua/LuaJIT tests and benchmarks that I wrote under the public domain." Mike Pall
+-- https://github.com/LuaJIT/LuaJIT-test-cleanup
 
 -- Generate a decision tree based solver for the meteor puzzle.
 local function generatesolver(countinit)
@@ -118,6 +120,12 @@ local function printresult()
   printboard(smax)
 end
 
+local function reset()
+  count = countinit
+  bmin, bmax, pcs = 9, 0, {}
+  smin, smax = nil, nil
+end
+
 -- Generate piece lookup array from the order of use.
 local function genp()
   local p = pcs
@@ -204,17 +212,18 @@ local f93 = f91
       j = j - 1; if j == 0 then j = 10 end
     end
   end
-
+  
   -- Compile and return solver function and result getter.
-  return loadstring(s.."return f0, printresult\n", "solver")(countinit)
+  return loadstring(s.."return f0, printresult, reset\n", "solver")(countinit)
 end
 
+
 -- Generate the solver function hierarchy.
-local solver, printresult = generatesolver(tonumber(arg and arg[1]) or 10000)
+local solver, printresult, reset = generatesolver(10000)
 
--- The optimizer for LuaJIT 1.1.x is not helpful here, so turn it off.
-if jit and jit.opt and jit.version_num < 10200 then jit.opt.start(0) end
-
--- Run the solver protected to get partial results (max count or ctrl-c).
-pcall(solver, 0)
-printresult()
+function run_iter(N)
+  for i=1,N do
+    solver(0)
+    reset()
+  end
+end

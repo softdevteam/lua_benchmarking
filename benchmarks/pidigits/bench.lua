@@ -1,6 +1,8 @@
+-- "I hereby put all Lua/LuaJIT tests and benchmarks that I wrote under the public domain." Mike Pall
+-- https://github.com/LuaJIT/LuaJIT-test-cleanup
 
 -- Start of dynamically compiled chunk.
-local chunk = [=[
+-- local chunk = 
 
 -- Factory function for multi-precision number (mpn) operations.
 local function fmm(fa, fb)
@@ -13,12 +15,12 @@ local function fmm(fa, fb)
       for i=1,n do -- Sum up all elements and propagate carry.
         local x = a[i] ]]..(fa == 2 and "*ka" or "")..
           (fb == 2 and "+b[i]*kb" or (fb == 1 and "+b[i]" or ""))..[[ + carry
-        if x < RADIX and x >= 0 then carry = 0; y[i] = x -- Check for overflow.
-        else local d = x % RADIX; carry = (x-d) / RADIX; y[i] = d end
+        if x < (2^36) and x >= 0 then carry = 0; y[i] = x -- Check for overflow.
+        else local d = x % (2^36); carry = (x-d) / (2^36); y[i] = d end
       end
       y[n+1] = nil -- Truncate target. 1 element suffices here.
       if carry == 0 then while n > 0 and y[n] == 0 do y[n] = nil end
-      elseif carry == -1 then y[n] = y[n] - RADIX else y[n+1] = carry end
+      elseif carry == -1 then y[n] = y[n] - (2^36) else y[n+1] = carry end
     ]]..(fb == 0 and "" or [[ -- Undo length adjustment.
       if na > nb then b[na] = nil elseif na < nb and y ~= a then a[nb] = nil end
     ]])..[[
@@ -57,14 +59,15 @@ local function extract(q,r,s,t, j)
   local nu, nv, y = #u, #v
   if nu == nv then
     if nu == 1 then y = u[1] / v[1]
-    else y = (u[nu]*RADIX + u[nu-1]) / (v[nv]*RADIX + v[nv-1]) end
-  elseif nu == nv+1 then y = (u[nu]*RADIX + u[nv]) / v[nv]
+    else y = (u[nu]*(2^36) + u[nu-1]) / (v[nv]*(2^36) + v[nv-1]) end
+  elseif nu == nv+1 then y = (u[nu]*(2^36) + u[nv]) / v[nv]
   else return 0 end
   return math.floor(y)
 end
 
 -- Coroutine which yields successive digits of PI.
-return coroutine.wrap(function()
+local function getdigits()
+  u, v, jj = {}, {}, 0
   local q, r, s, t, k = {1}, {}, {}, {1}, 1
   repeat
     local y = extract(q,r,s,t, 3)
@@ -76,25 +79,25 @@ return coroutine.wrap(function()
       k = k + 1
     end
   until false
-end)
-
-]=] -- End of dynamically compiled chunk.
-
-local N = tonumber(arg and arg[1]) or 27
-local RADIX = N < 6500 and 2^36 or 2^32 -- Avoid overflow.
-
--- Substitute radix and compile chunk.
-local pidigit = loadstring(string.gsub(chunk, "RADIX", tostring(RADIX)))()
-
--- Print lines with 10 digits.
-for i=10,N,10 do
-  for j=1,10 do io.write(pidigit()) end
-  io.write("\t:", i, "\n")
 end
 
--- Print remaining digits (if any).
-local n10 = N % 10
-if n10 ~= 0 then
-  for i=1,n10 do io.write(pidigit()) end
-  io.write(string.rep(" ", 10-n10), "\t:", N, "\n")
+function run_iter(N)
+  local pidigit = coroutine.wrap(getdigits)
+  local diget
+
+  for i=10,N,10 do
+    for j=1,10 do
+      io.write_devnull(pidigit())
+    end
+    io.write_devnull("\t:", i, "\n")
+  end
+
+  -- Print remaining digits (if any).
+  local n10 = N % 10
+  if n10 ~= 0 then
+    for i=1,n10 do io.write_devnull(pidigit()) end
+    io.write_devnull(string.rep(" ", 10-n10), "\t:", N, "\n")
+  end
+
+  return digiSt
 end

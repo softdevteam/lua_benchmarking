@@ -12,7 +12,7 @@ local function count(seq, frag)
   local k = #frag
   local freq = {}
   for frame=1,k do kfrequency(seq, freq, k, frame) end
-  io.write(freq[frag] or 0, "\t", frag, "\n")
+  return freq[frag] or 0 
 end
 
 local function frequency(seq, k)
@@ -24,19 +24,17 @@ local function frequency(seq, k)
     local fa, fb = freq[a], freq[b]
     return fa == fb and a > b or fa > fb
   end)
+  local ret = 0
   for _,c in ipairs(sfreq) do
-    io.write(string.format("%s %0.3f\n", c, (freq[c]*100)/sum))
+    ret = ret + ((freq[c]*100)/sum)
   end
-  io.write("\n")
+  return ret
 end
 
 local function readseq()
   local sub = string.sub
-  for line in io.lines() do
-    if sub(line, 1, 1) == ">" and sub(line, 2, 6) == "THREE" then break end
-  end
   local lines, ln = {}, 0
-  for line in io.lines() do
+  for line in io.lines("benchdata/fasta_output.txt") do
     local c = sub(line, 1, 1)
     if c == ">" then
       break
@@ -49,10 +47,19 @@ local function readseq()
 end
 
 local seq = readseq()
-frequency(seq, 1)
-frequency(seq, 2)
-count(seq, "GGT")
-count(seq, "GGTA")
-count(seq, "GGTATT")
-count(seq, "GGTATTTTAATT")
-count(seq, "GGTATTTTAATTTATAGT")
+
+local function run()
+    frequency(seq, 1)
+    frequency(seq, 2)
+    assert(count(seq, "GGT") == 2950)
+    assert(count(seq, "GGTA") == 895)
+    assert(count(seq, "GGTATT") == 90)
+    assert(count(seq, "GGTATTTTAATT") == 2)
+    assert(count(seq, "GGTATTTTAATTTATAGT") == 2)
+end
+
+function run_iter(n)
+    for i=1,n do
+       run() 
+    end
+end

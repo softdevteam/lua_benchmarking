@@ -1,8 +1,9 @@
-
+-- "I hereby put all Lua/LuaJIT tests and benchmarks that I wrote under the public domain." Mike Pall
+-- https://github.com/LuaJIT/LuaJIT-test-cleanup
 local co = coroutine
 local create, resume, yield = co.create, co.resume, co.yield
 
-local N = tonumber(arg and arg[1]) or 10
+local N = 10
 local first, second
 
 -- Meet another creature.
@@ -57,12 +58,13 @@ local function schedule(threads)
   until false
 end
 
--- A bunch of colorful creatures.
-local threads = {
-  creature("blue"),
-  creature("red"),
-  creature("yellow"),
-  creature("blue"),
-}
+local threads 
 
-io.write(schedule(threads), "\n")
+function run_iter(scaling)
+    N = scaling
+    first, second = nil, nil
+    -- A bunch of colorful creatures.
+    threads = {creature("blue"), creature("red"), creature("yellow"), creature("blue")}
+    local meets = schedule(threads)
+    assert(meets > 0)
+end
