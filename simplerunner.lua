@@ -82,6 +82,7 @@ function runner.init()
     loaded = true
     oskind = runner.detectos()
     add_package_path("lualibs")
+    add_package_path("rocks/modules")
     runner.loadbenchinfo()
     
     success, jit = pcall(require, "jit")   
