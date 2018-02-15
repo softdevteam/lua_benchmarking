@@ -41,6 +41,13 @@ function copy_binaries() {
   cp ${ljsrc}/luajit ${ljbins}/$1/luajit
   cp ${ljsrc}/libluajit.so ${ljbins}/$1/libluajit.so
   cp ${ljsrc}/jit/*.lua ${ljbins}/$1/jit/
+  
+  mkdir -p ${ljbins}/$1/include/
+  cp ${ljsrc}/luaconf.h ${ljbins}/$1/include
+  cp ${ljsrc}/lua.h ${ljbins}/$1/include
+  cp ${ljsrc}/luajit.h ${ljbins}/$1/include
+  cp ${ljsrc}/lualib.h ${ljbins}/$1/include
+  cp ${ljsrc}/lauxlib.h ${ljbins}/$1/include
 }
 
 BASE_XCFLAGS=${BASE_XCFLAGS:=""}
@@ -98,6 +105,12 @@ if [ ${BUILDALL} ]; then
   cd ..
   cp lua-vermelha/luav ${ljbins}/lua-vermelha/luav
 fi
+
+# We don't have access to string functions in the config file so pass the base dir for paths
+export LUAVM_BASEDIR=$(pwd)/builds/normal
+export LUAROCKS_CONFIG=$(pwd)/rocks_config.lua
+
+luarocks --tree=rocks install https://raw.githubusercontent.com/fsfod/luachild/master/luachild-0.1-1.rockspec
 
 echo "--------------Running benchmark build scripts-------------------------"
 

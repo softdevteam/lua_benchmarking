@@ -1,6 +1,6 @@
 local jit, jit_util, jit_dump, jitstats, json
 local match, gmatch = string.match, string.gmatch
-local benchinfo, scaling, oskind
+local benchinfo, scaling, oskind, subprocess
 
 local function add_package_path(basepath)
     local ext
@@ -13,6 +13,8 @@ local function add_package_path(basepath)
     package.path = string.format("%s/?/init.lua;%s/?.lua;%s/?/?.lua;%s", basepath, basepath, basepath, package.path)
     package.cpath = string.format("%s/?.%s;%s/?/?.%s;%s", basepath, ext, basepath, ext, package.cpath)
 end
+
+ffi = require("ffi")
 
 local function table_filter(t, f)
     local result = {}
@@ -30,9 +32,26 @@ local function readfile(path)
         return false, msg
     end
 
-    local success, text = pcall(file.read, file, "*all")
-    file.close(file)  
-    return success, text
+    local result, err = file:read("*all")
+    file:close()
+    if not result then
+        return false, err
+    end
+    return true, result
+end
+
+local function writefile(path, data)
+    local file, msg = io.open(path, "w")
+    if not file then
+        return false, msg
+    end
+
+    local success, msg = file:write(data)
+    file:close()
+    if not success then
+        return false, msg
+    end
+    return true
 end
 
 local function loadjson(path)
@@ -63,6 +82,7 @@ function runner.init()
     loaded = true
     oskind = runner.detectos()
     add_package_path("lualibs")
+    add_package_path("rocks/modules")
     runner.loadbenchinfo()
     
     success, jit = pcall(require, "jit")   
@@ -315,21 +335,67 @@ function runner.run_benchmark_list(benchmarks, count, options)
 
     local package_path = package.path
     local package_cpath = package.cpath
-    
-    for i, name in ipairs(benchmarks) do
-        local times = runner.runbench(name, count, options.scaling or scaling[name])
-        local stats = runner.calculate_stats(times)
-        print(string.format("  Mean: %f +/- %f, min %f, max %f", stats.mean, stats.cinterval, stats.min, stats.max))
-        if jitstats then
-            jitstats.print()
-        end
-        -- Try to clean away the current benchmark and its data, so the behaviour of the GC is more predictable for the next benchmark.
-        collectgarbage("collect")
+    local results = {}
 
-        -- Restore the Lua module search path since we set it to the directory of the benchmark when we load it.
-        package.path = package_path
-        package.cpath = package_cpath
+    for i, name in ipairs(benchmarks) do
+        local scaling = options.scaling or scaling[name] or 1
+        local stats
+
+        if options.inprocess then
+            local times, jstats = runner.runbench(name, count, scaling)
+            stats = runner.calculate_stats(times)
+            stats.times = times
+            print("  " .. runner.fmtstats(stats))
+            if jitstats then
+                stats.jitstats = jstats
+                jitstats.print()
+            end
+        else
+           runner.runbench_outprocess(name, count, scaling, options)
+        end
+
+        if options.inprocess then
+            -- Try to clean away the current benchmark and its data, so the behaviour of the GC is more predictable for the next benchmark.
+            collectgarbage("collect")
+
+            -- Restore the Lua module search path since we set it to the directory of the benchmark when we load it.
+            package.path = package_path
+            package.cpath = package_cpath
+        end
     end
+end
+
+function runner.runbench_outprocess(name, count, scaling, options)
+    local lc = require("luachild")
+    local read, write = lc.pipe()
+
+    local p = lc.spawn{
+        command = arg[-1],
+        args = {
+            arg[0], "--childprocess", name, count, scaling, unpack(arg, 1) 
+        },
+    }
+ 
+    local cmdret = p:wait()
+    if cmdret ~= 0 then
+        error("Out of process benchmark execution failed status = "..cmdret)
+    end
+end
+
+function runner.subprocess_run(benchmark, count, scaling, parent_options)
+    scaling = tonumber(scaling)
+    count = tonumber(count)
+    subprocess = true
+    runner.processoptions(parent_options)
+
+    local times, jstats = runner.runbench(benchmark, count, scaling)
+    local stats = runner.calculate_stats(times)
+    print("  " .. runner.fmtstats(stats))
+    if jitstats then
+        jitstats.print()
+    end
+
+    os.exit(0)
 end
 
 function runner.calculate_stats(times)
@@ -358,6 +424,10 @@ function runner.calculate_stats(times)
     -- 95% confidence interval
     stats.cinterval = 1.960 * stats.stddev/math.sqrt(count)
     return stats
+end
+
+function runner.fmtstats(stats)
+    return string.format("Mean: %f +/- %f, min %f, max %f", stats.mean, stats.cinterval, stats.min, stats.max)
 end
 
 -- Command line parsing system mostly copied from dynasm.lua in LuaJIT
@@ -404,17 +474,18 @@ function opt_map.help()
 
 Usage: simplerunner [OPTION] [<benchmark>] [<count>]
 
-  -h, --help           Display this help text.
-  -b, --bench name     Name of benchmark to run.
-  -c, --count num      Number of times to run the benchmarks.
-  -s, --scaling num    Number of interations to run the benchmarks.
-  -e, --exclude name   Exclude a benchmark from being run.
+  -h, --help            Display this help text.
+  -b, --bench name      Name of benchmark to run.
+  -c, --count num       Number of times to run the benchmarks.
+  -s, --scaling num     Number of interations to run the benchmarks.
+  -e, --exclude name    Exclude a benchmark from being run.
 
   --jitstats           Collect and print jit statisitcs from running the benchmarks.
   --jdump options      Run LuaJIT's jit.dump module with the specifed options.
   --benchloadjitstats  Also collect jitstats when loading a benchmark
   --nogc               Run the benchmarks with the GC disabled.
   --norandomize        Don't randomize the run order of the benchmarks.
+  --inprocess          Run benchmarks in the main process instead of executing them in a child process.
 ]]
     os.exit(0)
 end
@@ -428,6 +499,7 @@ function opt_map.jitstats() g_opt.jitstats = true end
 function opt_map.benchloadjitstats() loading_jitstats = true end
 function opt_map.nogc() g_opt.nogc = true end
 function opt_map.norandomize() g_opt.norandomize = true end
+function opt_map.inprocess() g_opt.inprocess = true end
 function opt_map.jdump(args)
     local options = optparam(args)
     local outfile = options:find(",")
@@ -455,7 +527,6 @@ end
 -- Parse arguments.
 function runner.parse_commandline(args)
     -- Default options.
-    g_opt.count = 30
     g_opt.benchmarks = {}
     g_opt.excludes = {}
     -- Process all option arguments.
@@ -483,6 +554,8 @@ function runner.parse_commandline(args)
         end
     end
 
+    g_opt.count = g_opt.count or 30
+
     local benchmarks
     if #g_opt.benchmarks > 0 then
         benchmarks = g_opt.benchmarks
@@ -505,6 +578,11 @@ function runner.parse_commandline(args)
 end
 
 function runner.processoptions(options)
+    -- Don't pointlessly run these options in the main process if we're running benchmarks in a child process
+    if not subprocess and not options.inprocess then
+        return
+    end
+
     if options.jitstats then
         runner.load_jitstats()
     end
@@ -552,12 +630,17 @@ end
 
 runner.init()
 
-if arg[1] then
+if arg[1] == "--childprocess" then
+    local benchmark, count, scaling = unpack(arg, 2)
+    local _, options = runner.parse_commandline({unpack(arg, 5)})
+    runner.subprocess_run(benchmark, count, scaling, options)
+else
     local benchmarks, options = runner.parse_commandline(arg)
     runner.processoptions(options)
+
+    if not arg[1] then
+        benchmarks = benchlist
+    end
     benchmarks = runner.filter_benchmarks(benchmarks)
     runner.run_benchmark_list(benchmarks, options.count, options)
-else
-    local benchmarks = runner.filter_benchmarks(benchlist)
-    runner.run_benchmark_list(benchmarks, 30)
 end

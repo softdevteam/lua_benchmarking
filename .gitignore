@@ -14,3 +14,7 @@ bencher_*.log
 lua-vermelha/
 raptorjit_repo/
 luajit_repo/
+lastrun.json
+# Ignore any Lua rocks we installed
+/rocks/
+/benchmarks/*/rocks/
