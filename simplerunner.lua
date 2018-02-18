@@ -355,7 +355,7 @@ function runner.run_benchmark_list(benchmarks, count, options)
                 jitstats.print()
             end
         else
-           runner.runbench_outprocess(name, count, scaling, options)
+           runner.runbench_outprocess(name, count, scaling, options.vm)
         end
 
         if options.inprocess then
@@ -369,12 +369,12 @@ function runner.run_benchmark_list(benchmarks, count, options)
     end
 end
 
-function runner.runbench_outprocess(name, count, scaling, options)
+function runner.runbench_outprocess(name, count, scaling, vm, options)
     local lc = require("luachild")
     local read, write = lc.pipe()
 
     local p = lc.spawn{
-        command = arg[-1],
+        command = vm or arg[-1],
         args = {
             arg[0], "--childprocess", name, count, scaling, unpack(arg, 1) 
         },
@@ -515,6 +515,7 @@ function opt_map.jdump(args)
         g_opt.jdump = options
     end
 end
+function opt_map.vm(args) g_opt.vm = optparam(args) end
 
 ------------------------------------------------------------------------------
 
@@ -558,6 +559,11 @@ function runner.parse_commandline(args)
         end
     end
 
+    if not subprocess and g_opt.vm then
+        g_opt.vm = string.format("builds/%s/luajit", g_opt.vm)
+        print("Using "..g_opt.vm.." for the Lua VM ")
+    end
+    
     g_opt.count = g_opt.count or 30
 
     local benchmarks
