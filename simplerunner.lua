@@ -75,15 +75,19 @@ local runner = {
 local loaded = false
 local startimer, stoptimer
 
-function runner.init()
+function runner.init(is_subprocess)
     if loaded then
+        assert((is_subprocess == true and subprocess) or not subprocess)
         return true
     end
     loaded = true
+    subprocess = is_subprocess
     oskind = runner.detectos()
     add_package_path("lualibs")
     add_package_path("rocks/modules")
-    runner.loadbenchinfo()
+    if not subprocess then
+        runner.loadbenchinfo()
+    end
     
     success, jit = pcall(require, "jit")   
     local hasjit = success and pcall(jit.on)
@@ -383,9 +387,9 @@ function runner.runbench_outprocess(name, count, scaling, options)
 end
 
 function runner.subprocess_run(benchmark, count, scaling, parent_options)
+    assert(subprocess == true)
     scaling = tonumber(scaling)
     count = tonumber(count)
-    subprocess = true
     runner.processoptions(parent_options)
 
     local times, jstats = runner.runbench(benchmark, count, scaling)
@@ -628,13 +632,13 @@ function runner.filter_benchmarks(benchmarks)
     return table_filter(benchmarks, check_filters)
 end
 
-runner.init()
-
 if arg[1] == "--childprocess" then
+    runner.init(true)
     local benchmark, count, scaling = unpack(arg, 2)
     local _, options = runner.parse_commandline({unpack(arg, 5)})
     runner.subprocess_run(benchmark, count, scaling, options)
 else
+    runner.init(false)
     local benchmarks, options = runner.parse_commandline(arg)
     runner.processoptions(options)
 
