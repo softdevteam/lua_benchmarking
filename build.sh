@@ -41,6 +41,8 @@ function copy_binaries() {
   cp ${ljsrc}/luajit ${ljbins}/$1/luajit
   cp ${ljsrc}/libluajit.so ${ljbins}/$1/libluajit.so
   cp ${ljsrc}/jit/*.lua ${ljbins}/$1/jit/
+  mkdir -p ${ljbins}/$1/jitlog/
+  cp ${ljsrc}/jitlog/*.lua ${ljbins}/$1/jitlog/
   
   mkdir -p ${ljbins}/$1/include/
   cp ${ljsrc}/luaconf.h ${ljbins}/$1/include

@@ -51,6 +51,7 @@ if exist "luajit.exe" (
   xcopy lua51.pdb ..\..\builds\%~1 /y
   xcopy lua51.lib ..\..\builds\%~1 /y  
   xcopy jit\*.lua ..\..\builds\%~1\jit /y /i
+  xcopy jitlog\*.lua ..\..\builds\%~1\jitlog /y /i
 
   mkdir ..\..\builds\%~1\include
   xcopy luaconf.h ..\..\builds\%~1\include /y
