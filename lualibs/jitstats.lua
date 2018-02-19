@@ -193,13 +193,13 @@ function vmevent.abort(tr, func, pc, code, errinfo)
     if bcname == "IFUNCF" then
         assert(start_pc == 0 and bc ~= start_bc)
         if jitstats.debug then
-            debugprint("Function blacklisted: %s", fmtfunc(func, pc))
+            debugprint("Function blacklisted: %s", fmtfunc(start_func, 0))
         end
         stats.func_blacklisted = stats.func_blacklisted + 1
     elseif bcname == "ILOOP" or bcname == "IFORL" or bcname == "IITERL" then
         assert(start_pc ~= 0 and bc ~= start_bc)
         if jitstats.debug then
-            debugprint("Loop blacklisted: %s", funcinfo(func, pc))
+            debugprint("Loop blacklisted: %s", fmtfunc(start_func, start_pc))
         end
         stats.loop_blacklisted = stats.loop_blacklisted + 1
     end
@@ -259,6 +259,23 @@ function jitstats.stop()
     jit.attach(vmevent.texit)
     jitstats.isrunning = false
     return true
+end
+
+function jitstats.set_stateclose_action()
+    local proxy = newproxy(true)
+    debug.getmetatable(proxy).__gc = function(self) jitstats.shutdowncb() end
+    jitstats.gcproxy = proxy
+    jitstats.shutdownprint = true
+end
+
+function jitstats.shutdowncb(mode)
+    if not jitstats.gcproxy then
+        return
+    end
+
+    if jitstats.shutdownprint then
+        jitstats.print()    
+    end
 end
 
 local function initorclear(tab, key)
