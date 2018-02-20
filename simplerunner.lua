@@ -104,11 +104,7 @@ function runner.init(is_subprocess)
     -- Raptor jit removed jit.util so only try to use if its available
     success, jit_util = pcall(require, "jit.util")
 
-    if success then
-        if not pcall(require, "jit.vmdef") then
-            add_package_path("luajit_repo/src")
-        end
-    else
+    if not success then
         jit_util = nil
     end
 
@@ -559,12 +555,19 @@ function runner.parse_commandline(args)
         end
     end
 
-    if not subprocess and g_opt.vm then
+    if g_opt.vm then
+        g_opt.vmdir = "builds/"..g_opt.vm
         g_opt.vm = string.format("builds/%s/luajit", g_opt.vm)
-        print("Using "..g_opt.vm.." for the Lua VM ")
+        if(not subprocess) then
+            print("Using "..g_opt.vm.." for the Lua VM ")
+        end
     end
     
     g_opt.count = g_opt.count or 30
+    
+    if subprocess then
+        return benchmarks, g_opt
+    end
 
     local benchmarks
     if #g_opt.benchmarks > 0 then
@@ -588,9 +591,19 @@ function runner.parse_commandline(args)
 end
 
 function runner.processoptions(options)
+    if options.vmdir then
+        add_package_path(options.vmdir)
+    else
+        add_package_path("builds/normal")
+    end
+
     -- Don't pointlessly run these options in the main process if we're running benchmarks in a child process
     if not subprocess and not options.inprocess then
         return
+    end
+    
+    if (options.jdump or options.jitstats) and not pcall(require, "jit.vmdef") then
+        error("Failed to load vmdef module")
     end
 
     if options.jitstats then
