@@ -594,7 +594,11 @@ function runner.processoptions(options)
     if options.vmdir then
         add_package_path(options.vmdir)
     else
-        add_package_path("builds/normal")
+        local vmdir, name = arg[-1]:gsub("\\\\", "\\"):match("^(.+)[/\\](.+)$")
+        print(arg[-1], vmdir, name)
+        if vmdir then
+            add_package_path(vmdir)
+        end
     end
 
     -- Don't pointlessly run these options in the main process if we're running benchmarks in a child process
