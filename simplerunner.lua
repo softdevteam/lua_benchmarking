@@ -595,7 +595,6 @@ function runner.processoptions(options)
         add_package_path(options.vmdir)
     else
         local vmdir, name = arg[-1]:gsub("\\\\", "\\"):match("^(.+)[/\\](.+)$")
-        print(arg[-1], vmdir, name)
         if vmdir then
             add_package_path(vmdir)
         end
