@@ -2,6 +2,12 @@
 
 setlocal enableextensions enabledelayedexpansion
 
+set BenchRoot=%~dp0
+
+if not exist "luajit_repo" (
+    git clone https://github.com/softdevteam/LuaJIT luajit_repo
+)
+
 if not defined INCLUDE (
   echo No MSVC env vars set attempting to find vcvars.bat using system installed vswhere.exe
   set vswhere="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -12,6 +18,7 @@ if not defined INCLUDE (
     )
 
     if exist "!vsdir!\VC\Auxiliary\Build\vcvars64.bat" (
+      set "VSCMD_START_DIR=%BenchRoot%"
       echo Running vcvars64 found in !vsdir! with vswhere.exe
       call "!vsdir!\VC\Auxiliary\Build\vcvars64.bat"
     )
@@ -25,7 +32,7 @@ if not defined INCLUDE (
 
 echo --------- Building LuaJIT --------------------
 
-cd luajit_repo/src
+cd "%BenchRoot%luajit_repo\src"
 
 del *.pdb *.lib *.dll *.exp *.exe
 call msvcbuild.bat
@@ -37,8 +44,8 @@ call :copy_luajit "gc64"
 
 cd ..\..
 
-set LUAROCKS_CONFIG=%~dp0rocks_config.lua
-set LUAVM_BASEDIR=%~dp0builds\normal
+set LUAROCKS_CONFIG=%BenchRoot%rocks_config.lua
+set LUAVM_BASEDIR=%BenchRoot%builds\normal
 luarocks install --tree rocks https://raw.githubusercontent.com/fsfod/luachild/master/luachild-0.1-1.rockspec
 
 EXIT
