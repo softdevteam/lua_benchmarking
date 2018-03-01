@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from krun.vm_defs import (GenericScriptingVMDef)
 from krun import EntryPoint
 from krun.util import fatal
@@ -64,9 +65,12 @@ class OpenRestyVMDef(GenericScriptingVMDef):
                  sync_disks=True):
         benchmark = key.split(":")[0]
         script_path = self._get_benchmark_path(benchmark, interpreter,
-                                               force_dir=force_dir)
+                     
+        
+                                   force_dir=force_dir)
         args = [self.vm_path, "-c", "nginx.conf", "-g", 
-                "\"#@KRUN@benchmark=%s|iters=%d|param=%d|debug=0@KRUN@;\"" % (script_path, iterations, param)]
+                "\"#@KRUN@benchmark=%s|iters=%d|param=%d|debug=%d|instrument=%d@KRUN@;\"" % 
+                (script_path, iterations, param, logging.getLogger().isEnabledFor(logging.DEBUG), self.instrument)]
         
         return self._run_exec(args, heap_lim_k, stack_lim_k, key,
                               key_pexec_idx, sync_disks=sync_disks)
