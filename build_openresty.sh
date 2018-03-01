@@ -2,6 +2,8 @@
 
 mkdir -p builds/openresty/src
 
+OPENSSL=openssl-1.0.2h
+
 buildsdir=$(cd "builds" && pwd)
 
 (cd luajit_repo && git worktree add ../builds/openresty/src origin/openresty/merge)
@@ -35,8 +37,8 @@ copy_binaries "openresty"
 
 mkdir build && cd build
 
-curl https://www.openssl.org/source/${OPENSSL}.tar.gz -O
-curl https://openresty.org/download/openresty-1.13.6.1.tar.gz -O
+curl https://www.openssl.org/source/${OPENSSL}.tar.gz -O --progress-bar
+curl https://openresty.org/download/openresty-1.13.6.1.tar.gz -O --progress-bar
 
 mkdir -p openresty && tar -zxf openresty-1.13.6.1.tar.gz -C openresty --strip-components=1
 mkdir -p openssl && tar -zxf ${OPENSSL}.tar.gz -C openssl --strip-components=1
