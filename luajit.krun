@@ -50,6 +50,28 @@ class LuaJITVMDef(GenericScriptingVMDef):
                                                 key_pexec_idx,
                                                 force_dir=force_dir,
                                                 sync_disks=sync_disks)
+                                                
+class OpenRestyVMDef(GenericScriptingVMDef):
+    def __init__(self, vm_path, entry_point=None,
+                 subdir=None, env=None, instrument=False):
+        GenericScriptingVMDef.__init__(self, vm_path, "iterations_runner.lua",
+                                       env=env, instrument=instrument)
+        self.iterations_runner = "iterations_runner.lua"
+
+
+    def run_exec(self, interpreter, iterations, param, heap_lim_k,
+                 stack_lim_k, key, key_pexec_idx, force_dir=None,
+                 sync_disks=True):
+        benchmark = key.split(":")[0]
+        script_path = self._get_benchmark_path(benchmark, interpreter,
+                                               force_dir=force_dir)
+        args = [self.vm_path, "-c", "nginx.conf", "-g", 
+                "\"#@KRUN@benchmark=%s|iters=%d|param=%d|debug=0@KRUN@;\"" % (script_path, iterations, param)]
+        
+        return self._run_exec(args, heap_lim_k, stack_lim_k, key,
+                              key_pexec_idx, sync_disks=sync_disks)
+                              
+
 
 VMS = {
     'Normal': {
@@ -77,6 +99,12 @@ VMS = {
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
+    'OpenResty': {
+        'vm_def': OpenRestyVMDef("builds/openresty/nginx/nginx", env=make_env("openresty")),
+        'variants': ['default-lua'],
+        'n_iterations': ITERATIONS_ALL_VMS,
+    },
+    
 }
 
 BENCHMARKS = {
