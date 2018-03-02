@@ -73,6 +73,8 @@ class OpenRestyVMDef(GenericScriptingVMDef):
         args = [self.vm_path, "-c",  os.path.join(DIR, "nginx.conf"), "-g", 
                 "\"#@KRUN@benchmark=%s|iters=%d|param=%d|debug=%d|instrument=%d@KRUN@;\"" % 
                 (script_path, iterations, param, logging.getLogger().isEnabledFor(logging.DEBUG), self.instrument)]
+        # dirty hack to work around krun user permissions
+        self.platform.no_user_change = True 
         
         return self._run_exec(args, heap_lim_k, stack_lim_k, key,
                               key_pexec_idx, sync_disks=sync_disks)
