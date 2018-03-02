@@ -55,30 +55,33 @@ class LuaJITVMDef(GenericScriptingVMDef):
                                                 sync_disks=sync_disks)
                                                 
 class OpenRestyVMDef(GenericScriptingVMDef):
-    def __init__(self, vm_path, entry_point=None,
+    def __init__(self, vm_path, nginx_conf, nginx_prefixdir=None, entry_point=None,
                  subdir=None, env=None, instrument=False):
         GenericScriptingVMDef.__init__(self, vm_path, "openresty_runner.lua",
                                        env=env, instrument=instrument)
+        self.nginx_prefixdir = nginx_prefixdir
+        self.nginx_conf = nginx_conf
         self.iterations_runner = "openresty_runner.lua"
-
 
     def run_exec(self, interpreter, iterations, param, heap_lim_k,
                  stack_lim_k, key, key_pexec_idx, force_dir=None,
                  sync_disks=True):
         benchmark = key.split(":")[0]
-        script_path = self._get_benchmark_path(benchmark, interpreter,
-                     
+        script_path = self._get_benchmark_path(benchmark, interpreter, force_dir=force_dir)
         
-                                   force_dir=force_dir)
-        args = [self.vm_path, "-c",  os.path.join(DIR, "nginx.conf"), "-g", 
-                "\"#@KRUN@benchmark=%s|iters=%d|param=%d|debug=%d|instrument=%d@KRUN@;\"" % 
-                (script_path, iterations, param, logging.getLogger().isEnabledFor(logging.DEBUG), self.instrument)]
         # dirty hack to work around krun user permissions
         self.platform.no_user_change = True 
         
+        args = [self.vm_path, "-c", self.nginx_conf, "-g", 
+                "\"#@KRUN@benchmark=%s|iters=%d|param=%d|debug=%d|instrument=%d|key=%s@KRUN@;\"" % 
+                (script_path, iterations, param, logging.getLogger().isEnabledFor(logging.DEBUG), self.instrument, key)]
+
+        if self.nginx_prefixdir != None:
+          args.extend(["-p", self.nginx_prefixdir])
+
         return self._run_exec(args, heap_lim_k, stack_lim_k, key,
                               key_pexec_idx, sync_disks=sync_disks)
-                              
+
       
     def _run_exec(self, args, heap_lim_k, stack_lim_k, key, key_pexec_idx,
                   bench_env_changes=None, sync_disks=True):
@@ -157,7 +160,7 @@ VMS = {
         'n_iterations': ITERATIONS_ALL_VMS,
     },
     'OpenResty': {
-        'vm_def': OpenRestyVMDef("builds/openresty/nginx/nginx", env=make_env("openresty")),
+        'vm_def': OpenRestyVMDef("builds/openresty/nginx/nginx", os.path.join(DIR, "nginx.conf"), env=make_env("openresty")),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
