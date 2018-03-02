@@ -6,14 +6,16 @@ Thumbs.db
 /builds/
 *.manifest
 luajit_*.log
+bencher_*.log
 quicktest_*.log
+openresty_*.log
 *_envlogs/
 *_results.json.bz2
 *_instr_data/
-bencher_*.log
 lua-vermelha/
 raptorjit_repo/
 luajit_repo/
+build/
 lastrun.json
 # Ignore any Lua rocks we installed
 /rocks/

@@ -47,5 +47,5 @@ mkdir -p openssl && tar -zxf ${OPENSSL}.tar.gz -C openssl --strip-components=1
 (cd openresty && ./configure -j3 --with-openssl=../openssl --sbin-path=nginx --prefix=${buildsdir}/openresty --with-luajit=${buildsdir}/openresty)
 (cd openresty && make -j3 && make install)
 
-
-
+rm -rf openresty/
+rm -rf openssl/

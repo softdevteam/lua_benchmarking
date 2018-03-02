@@ -7,3 +7,4 @@ function clean_results() {
 clean_results "luajit"
 clean_results "quicktest"
 clean_results "bencher"
+clean_results "openresty"
