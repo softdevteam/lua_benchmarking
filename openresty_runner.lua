@@ -53,13 +53,12 @@ for optenty in string.gmatch(krunoptstr, "([^|]+)") do
 end
 
 assert(next(options), "Failed to match any options inside the @KRUN@ ")
-assert(options.BENCHBASE)
 
 local BM_benchmark = options.benchmark
 local BM_iters = options.iters and tonumber(options.iters)
 local BM_param = tonumber(options.param)
 local BM_debug = tonumber(options.debug) > 0
-local BM_instrument = options.instrument
+local BM_instrument = tonumber(options.instrument) > 0
 local BM_instdatadir = options.instdatadir
 local BM_key = options.key
 local BM_pexecidx = options.pexecidx
@@ -219,3 +218,4 @@ io.stdout:write(", ")
 emit_per_core_measurements("mperf_counts", BM_num_cores, BM_mperf_counts, BM_iters)
 
 io.stdout:write("}\n")
+io.stdout:flush()
