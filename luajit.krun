@@ -57,9 +57,9 @@ class LuaJITVMDef(GenericScriptingVMDef):
 class OpenRestyVMDef(GenericScriptingVMDef):
     def __init__(self, vm_path, entry_point=None,
                  subdir=None, env=None, instrument=False):
-        GenericScriptingVMDef.__init__(self, vm_path, "iterations_runner.lua",
+        GenericScriptingVMDef.__init__(self, vm_path, "openresty_runner.lua",
                                        env=env, instrument=instrument)
-        self.iterations_runner = "iterations_runner.lua"
+        self.iterations_runner = "openresty_runner.lua"
 
 
     def run_exec(self, interpreter, iterations, param, heap_lim_k,
