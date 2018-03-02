@@ -1,0 +1,91 @@
+execfile("luajit.krun", globals()) # inherit settings from the main experiment
+
+class OpenRestyVMDef(GenericScriptingVMDef):
+    def __init__(self, vm_path, nginx_conf, nginx_prefixdir=None, entry_point=None,
+                 subdir=None, env=None, instrument=False):
+        GenericScriptingVMDef.__init__(self, vm_path, "openresty_runner.lua",
+                                       env=env, instrument=instrument)
+        self.nginx_prefixdir = nginx_prefixdir
+        self.nginx_conf = nginx_conf
+        self.iterations_runner = "openresty_runner.lua"
+
+    def run_exec(self, interpreter, iterations, param, heap_lim_k,
+                 stack_lim_k, key, key_pexec_idx, force_dir=None,
+                 sync_disks=True):
+        benchmark = key.split(":")[0]
+        script_path = self._get_benchmark_path(benchmark, interpreter, force_dir=force_dir)
+
+        # dirty hack to work around krun user permissions
+        self.platform.no_user_change = True
+
+        args = [self.vm_path, "-c", self.nginx_conf, "-g",
+                "\"#@KRUN@benchmark=%s|iters=%d|param=%d|debug=%d|instrument=%d|key=%s@KRUN@;\"" %
+                (script_path, iterations, param, logging.getLogger().isEnabledFor(logging.DEBUG), self.instrument, key)]
+
+        if self.nginx_prefixdir != None:
+          args.extend(["-p", self.nginx_prefixdir])
+
+        return self._run_exec(args, heap_lim_k, stack_lim_k, key,
+                              key_pexec_idx, sync_disks=sync_disks)
+
+
+    def _run_exec(self, args, heap_lim_k, stack_lim_k, key, key_pexec_idx,
+                  bench_env_changes=None, sync_disks=True):
+        """ Deals with actually shelling out """
+
+        if bench_env_changes is None:
+            bench_env_changes = []
+
+        # Environment *after* user change.
+        # Starts minimal, but user change command (i.e. sudo) may introduce more.
+        new_user_env = {"PATH": "/bin:/usr/bin"}
+
+        # Apply envs
+        self.apply_env_changes(bench_env_changes, new_user_env)
+
+        # Apply platform specific argument transformations.
+        args = self.platform.bench_cmdline_adjust(args, new_user_env)
+
+        if self.instrument:
+            # we will redirect stderr to this handle
+            stderr_file = open(INST_STDERR_FILE, "w")
+        else:
+            stderr_file = subprocess.PIPE
+
+        if self.dry_run:
+            warn("SIMULATED: Benchmark process execution (--dryrun)")
+            return ("", "", 0, None)
+
+        #if not self.platform.no_user_change:
+        #    self.platform.make_fresh_krun_user()
+
+        wrapper_filename, envlog_filename = \
+            self.make_wrapper_script(args, heap_lim_k, stack_lim_k)
+        wrapper_args = self._wrapper_args(wrapper_filename)
+        debug("Execute wrapper: %s" % (" ".join(wrapper_args)))
+
+        # Do an OS-level sync. Forces pending writes on to the physical disk.
+        # We do this in an attempt to prevent disk commits happening during
+        # benchmarking.
+        if sync_disks:
+            self.platform.sync_disks()
+
+        out, err, rc = self._run_exec_popen(wrapper_args, stderr_file)
+
+        if self.instrument:
+            stderr_file.close()
+
+        os.unlink(wrapper_filename)
+        return out, err, rc, envlog_filename
+
+VMS = {
+    'OpenResty': {
+        'vm_def': OpenRestyVMDef("builds/openresty/nginx/nginx", os.path.join(DIR, "nginx.conf"), env=make_env("openresty")),
+        'variants': ['default-lua'],
+        'n_iterations': ITERATIONS_ALL_VMS,
+    },
+}
+
+SKIP = [
+
+]
