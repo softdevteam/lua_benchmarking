@@ -66,6 +66,40 @@ local BM_pexecidx = options.pexecidx
 assert(BM_benchmark, "No benchmark specified")
 assert(BM_iters, "No iteration count specified")
 
+function add_luapackage_path(basepath, highpriority)
+    assert(type(basepath) == "string" and #basepath > 0)
+    
+    if basepath[#basepath] == "/" then
+        basepath = basepath:sub(#basepath - 1)
+    end
+
+    if highpriority then
+        package.path = string.format("%s/?.lua;%s/?/init.lua;%s", basepath, basepath, package.path)
+    else
+        package.path = string.format("%s;%s/?.lua;%s/?/init.lua", package.path, basepath, basepath)
+    end
+end
+
+function add_cpackage_path(basepath, highpriority)
+    assert(type(basepath) == "string" and #basepath > 0)
+
+    if basepath[#basepath] == "/" then
+        basepath = basepath:sub(#basepath - 1)
+    end
+
+    if highpriority then
+        package.cpath = string.format("%s/?.so;%s/?/?.so;%s", basepath, basepath, package.cpath)
+    else
+        package.cpath = string.format("%s;%s/?.so;%s/?/?.so", package.cpath, basepath, basepath)
+    end
+end
+
+local slashidx = string.find(BM_benchmark, "/[^/]*$")
+if slashidx then
+    local benchdir = string.sub(BM_benchmark, 1, slashidx-1)
+    add_luapackage_path(benchdir, true)
+    add_cpackage_path(benchdir, true)
+end
 
 function emit_per_core_measurements(name, num_cores, tbl, tbl_len)
     io.stdout:write(string.format('"%s": [', name))
