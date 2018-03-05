@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Needed packages libpcre3-dev libssl-dev zlib1g-dev perl
+
 mkdir -p builds/openresty/src
 
 OPENSSL=openssl-1.0.2h
