@@ -40,6 +40,28 @@ local ffi = require("ffi")
 local json = require("json_nojit")
 local jitstats
 
+-- @param addtostart Pass true to insert the search path at the start of the module search path list.
+function add_luapackage_path(basepath, addtostart)
+    assert(type(basepath) == "string" and #basepath > 0)
+
+    if addtostart then
+        package.path = string.format("%s/?.lua;%s/?/init.lua;%s", basepath, basepath, package.path)
+    else
+        package.path = string.format("%s;%s/?.lua;%s/?/init.lua", package.path, basepath, basepath)
+    end
+end
+
+-- @param addtostart Pass true to insert the search path at the start of the module search path list.
+function add_cpackage_path(basepath, addtostart)
+    assert(type(basepath) == "string" and #basepath > 0)
+
+    if addtostart then
+        package.cpath = string.format("%s/?.so;%s/?/?.so;%s", basepath, basepath, package.cpath)
+    else
+        package.cpath = string.format("%s;%s/?.so;%s/?/?.so", package.cpath, basepath, basepath)
+    end
+end
+
 function emit_per_core_measurements(name, num_cores, tbl, tbl_len)
     io.stdout:write(string.format('"%s": [', name))
 
@@ -96,6 +118,13 @@ if #arg ~= 4 and #arg ~= 7 then
                     "[key pexec index]\n\n")
     io.stderr:write("Arguments in [] are for instrumentation mode only.\n")
     os.exit(1)
+end
+
+-- Add the benchmarks directory as a Lua module search path
+local benchdir, scriptname = string.match(BM_benchmark, "^(.-)[/]?([^/]*)$")
+if benchdir and scriptname then
+    add_luapackage_path(benchdir, true)
+    add_cpackage_path(benchdir, true)
 end
 
 if BM_instrument then
