@@ -1,4 +1,5 @@
 execfile("luajit.krun", globals()) # inherit settings from the main experiment
+from krun import util
 
 class OpenRestyVMDef(GenericScriptingVMDef):
     def __init__(self, vm_path, nginx_conf, nginx_prefixdir=None, entry_point=None,
@@ -19,8 +20,9 @@ class OpenRestyVMDef(GenericScriptingVMDef):
         self.platform.no_user_change = True
 
         args = [self.vm_path, "-c", self.nginx_conf, "-g",
-                "\"#@KRUN@benchmark=%s|iters=%d|param=%d|debug=%d|instrument=%d|key=%s@KRUN@;\"" %
-                (script_path, iterations, param, logging.getLogger().isEnabledFor(logging.DEBUG), self.instrument, key)]
+                "\"#@KRUN@benchmark=%s|iters=%d|param=%d|debug=%d|instrument=%d|instdatadir=%s|key=%s|pexecidx=%d@KRUN@;\"" %
+                (script_path, iterations, param, logging.getLogger().isEnabledFor(logging.DEBUG), 
+                self.instrument, util.get_instr_json_dir(self.config), key, key_pexec_idx)]
 
         if self.nginx_prefixdir != None:
           args.extend(["-p", self.nginx_prefixdir])
@@ -48,7 +50,7 @@ class OpenRestyVMDef(GenericScriptingVMDef):
 
         if self.instrument:
             # we will redirect stderr to this handle
-            stderr_file = open(INST_STDERR_FILE, "w")
+            stderr_file = open("/tmp/krun.stderr", "w")
         else:
             stderr_file = subprocess.PIPE
 
