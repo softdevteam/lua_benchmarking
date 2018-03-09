@@ -2,7 +2,15 @@ execfile("luajit.krun", globals()) # inherit settings from the main experiment
 
 MAIL_TO = ["fsfod11@gmail.com"]
 
+PING_HOST = "bencher8.soft-dev.org"
+
 PRE_EXECUTION_CMDS = [
+    # Stop network first. If an interface accepts a DHCP lease during one
+    # of the later commands below, it can cause the command to be
+    # "cancelled" by systemd. Bringing the network itself down can fail in
+    # the same way, so keep trying (with sleeps between).
+    "while true; do sudo systemctl stop networking; sleep 5; ping -q -c 10 %s || break; done" % PING_HOST,
+    
     "sudo systemctl stop apt-daily.timer",
     "sudo systemctl --runtime disable apt-daily.timer",
 
@@ -19,6 +27,10 @@ PRE_EXECUTION_CMDS = [
 ]
 
 POST_EXECUTION_CMDS = [
+    # The network doesn't always come up properly on debian. We keep trying
+    # until we can ping a host on the network.
+    "while true; do ping -c 3 -q %s && break; sudo systemctl stop networking; sleep 5; sudo systemctl start networking; done" % PING_HOST,
+    
     "sudo systemctl start systemd-timesyncd || true",
     "sudo systemctl start cron || true",
 
