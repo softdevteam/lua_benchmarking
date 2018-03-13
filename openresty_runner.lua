@@ -131,9 +131,6 @@ ffi.cdef[[
     double krun_get_mperf_double(int, int);
 ]]
 local libkruntime = ffi.load("kruntime")
-
-local krun_init = libkruntime.krun_init
-local krun_done = libkruntime.krun_done
 local krun_measure = libkruntime.krun_measure
 local krun_get_num_cores = libkruntime.krun_get_num_cores
 local krun_get_wallclock = libkruntime.krun_get_wallclock
@@ -153,7 +150,7 @@ if BM_instrument then
     jitlog.addmarker("LOAD(END)")
 end
 
-krun_init()
+libkruntime.krun_init()
 local BM_num_cores = krun_get_num_cores()
 
 -- Pre-allocate and fill results tables
@@ -186,16 +183,15 @@ for BM_core = 1, BM_num_cores, 1 do
     end
 end
 
-local stats_start, stats_stop
-
-if BM_instrument then
-    jitlog.addmarker("BENCH(START)")
-end
+-- The Global table is wiped after we return so keep run_iter around as an upvalue
+local run_iter = run_iter
+local do_request, save_results
+local BM_i = 1
 
 -- Main loop
-for BM_i = 1, BM_iters, 1 do
+function do_request()
     if BM_debug then
-        io.stderr:write(string.format("[iterations_runner.lua] iteration %d/%d\n", BM_i, BM_iters))
+        io.stderr:write(string.format("[openresty_runner.lua] iteration %d/%d\n", BM_i, BM_iters))
     end
     if BM_instrument then
         jitlog.addmarker("BEGIN")
@@ -205,6 +201,7 @@ for BM_i = 1, BM_iters, 1 do
     krun_measure(0);
     run_iter(BM_param)
     krun_measure(1);
+  
     -- End timed section
 
     if BM_instrument then
@@ -225,31 +222,47 @@ for BM_i = 1, BM_iters, 1 do
             krun_get_mperf_double(1, BM_core - 1) -
             krun_get_mperf_double(0, BM_core - 1)
     end
-end
-
-if BM_instrument then
-    jitlog.addmarker("BENCH(END)")
-    jitlog.save(string.format("%s/%s_%d.jlog", BM_instdatadir, BM_key, BM_pexecidx):gsub(":", "_"))
-end
-
-krun_done()
-
-io.stdout:write("{")
-
-io.stdout:write('"wallclock_times": [')
-for BM_i = 1, BM_iters, 1 do
-    io.stdout:write(BM_wallclock_times[BM_i])
-    if BM_i < BM_iters then
-        io.stdout:write(", ")
+    
+    BM_i =  BM_i + 1
+    if BM_i <= BM_iters then
+        ngx.timer.at(0, do_request)
+    else
+        save_results()
+        os.exit(0)
     end
 end
-io.stdout:write("], ")
 
-emit_per_core_measurements("core_cycle_counts", BM_num_cores, BM_cycle_counts, BM_iters)
-io.stdout:write(", ")
-emit_per_core_measurements("aperf_counts", BM_num_cores, BM_aperf_counts, BM_iters)
-io.stdout:write(", ")
-emit_per_core_measurements("mperf_counts", BM_num_cores, BM_mperf_counts, BM_iters)
+function save_results()
+    if BM_debug then
+        io.stderr:write(string.format("[openresty_runner.lua] Saving results\n", BM_i, BM_iters))
+    end
+    -- Note this reference to libkruntime is only thing keeping the lib alive until the benchmark ends
+    libkruntime.krun_done()
+    
+    if BM_instrument then
+        jitlog.addmarker("BENCH(END)")
+        jitlog.save(string.format("%s/%s_%d.jlog", BM_instdatadir, BM_key, BM_pexecidx):gsub(":", "_"))
+    end
+    
+    io.stdout:write("{")
+    
+    io.stdout:write('"wallclock_times": [')
+    for BM_i = 1, BM_iters, 1 do
+        io.stdout:write(BM_wallclock_times[BM_i])
+        if BM_i < BM_iters then
+            io.stdout:write(", ")
+        end
+    end
+    io.stdout:write("], ")
+    
+    emit_per_core_measurements("core_cycle_counts", BM_num_cores, BM_cycle_counts, BM_iters)
+    io.stdout:write(", ")
+    emit_per_core_measurements("aperf_counts", BM_num_cores, BM_aperf_counts, BM_iters)
+    io.stdout:write(", ")
+    emit_per_core_measurements("mperf_counts", BM_num_cores, BM_mperf_counts, BM_iters)
+    
+    io.stdout:write("}\n")
+    io.stdout:flush()
+end
 
-io.stdout:write("}\n")
-io.stdout:flush()
+ngx.timer.at(0, do_request)
