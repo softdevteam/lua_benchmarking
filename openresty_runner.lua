@@ -37,7 +37,7 @@ SOFTWARE.
 --]]
 
 local ffi = require("ffi")
-local jitstats
+local jitlog
 
 local f = io.open("/proc/self/cmdline", "rb")
 local cmdline = f:read("*all")
