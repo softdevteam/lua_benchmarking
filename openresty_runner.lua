@@ -188,6 +188,20 @@ local run_iter = run_iter
 local do_request, save_results
 local BM_i = 1
 
+local function error_callback(err)
+    local trace = debug.traceback(err, 1)
+    io.stderr:write(trace, "\n")
+    io.stderr:flush()
+    os.exit(1)
+end
+
+local function request_wrapper()
+    local ok, err = xpcall(do_request, error_callback)
+    if not ok then
+        os.exit(1)
+    end
+end
+
 -- Main loop
 function do_request()
     if BM_debug then
@@ -225,10 +239,10 @@ function do_request()
     
     BM_i =  BM_i + 1
     if BM_i <= BM_iters then
-        ngx.timer.at(0, do_request)
+        ngx.timer.at(0, request_wrapper)
     else
-        save_results()
-        os.exit(0)
+        local ok, err = xpcall(save_results, error_callback)
+        os.exit(ok and 0 or 1)
     end
 end
 
@@ -265,4 +279,4 @@ function save_results()
     io.stdout:flush()
 end
 
-ngx.timer.at(0, do_request)
+ngx.timer.at(0, request_wrapper)
