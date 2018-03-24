@@ -18,9 +18,9 @@ function copy_binaries() {
   cp ${ljsrc}/libluajit.so ${buildsdir}/$1/libluajit.so
   
   mkdir ${buildsdir}/$1/lib
-  ln -s ${buildsdir}/$1/libluajit.so ${buildsdir}/$1/lib/libluajit-5.1.so
-  ln -s ${buildsdir}/$1/libluajit.so ${buildsdir}/$1/libluajit-5.1.so
-  ln -s ${buildsdir}/$1/libluajit.so ${buildsdir}/$1/lib/libluajit-5.1.so.2
+# Make nginx bind to a LuaJit library named libluajit.so in library path it is started with
+  ln -s libluajit.so ${buildsdir}/$1/lib/libluajit-5.1.so
+  ln -s libluajit.so ${buildsdir}/$1/lib/libluajit-5.1.so.2
   
   cp ${ljsrc}/jit/*.lua ${buildsdir}/$1/jit/
   
@@ -51,3 +51,7 @@ mkdir -p openssl && tar -zxf ${OPENSSL}.tar.gz -C openssl --strip-components=1
 
 rm -rf openresty/
 rm -rf openssl/
+
+# Make nginx bind to a LuaJit library named libluajit.so in library path it is started with
+rm ${buildsdir}/openresty/lib/libluajit-5.1.so
+rm ${buildsdir}/openresty/lib/libluajit-5.1.so.2

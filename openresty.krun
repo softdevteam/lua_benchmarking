@@ -1,6 +1,11 @@
 execfile("luajit.krun", globals()) # inherit settings from the main experiment
 from krun import util
 
+def makeresty_env(vmdir)
+  env=make_env(vmdir)
+  env["LD_LIBRARY_PATH"] = "%s:${LD_LIBRARY_PATH}" %  os.path.join(DIR, "builds", vmdir)
+  return env
+
 class OpenRestyVMDef(GenericScriptingVMDef):
     def __init__(self, vm_path, nginx_conf, nginx_prefixdir=None, entry_point=None,
                  subdir=None, env=None, instrument=False):
@@ -82,7 +87,7 @@ class OpenRestyVMDef(GenericScriptingVMDef):
 
 VMS = {
     'OpenResty': {
-        'vm_def': OpenRestyVMDef("builds/openresty/nginx/nginx", os.path.join(DIR, "nginx.conf"), env=make_env("openresty")),
+        'vm_def': OpenRestyVMDef("builds/openresty/nginx/nginx", os.path.join(DIR, "nginx.conf"), env=makeresty_env("openresty")),
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
