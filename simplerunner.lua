@@ -293,6 +293,10 @@ function runner.runbench(name, count, scaling)
         jit.off()
         jit.on()
     end
+    
+    if jitlog then
+        jitlog.addmarker("START: "..name)
+    end
 
     local run_iter = _G.run_iter
     for i = 1, count do
@@ -302,14 +306,14 @@ function runner.runbench(name, count, scaling)
             jitstats.getsnapshot(start)
         end
         if jitlog then
-            jitlog.addmarker("JITLOG(BEGIN): "..name)
+            jitlog.addmarker("BEGIN: "..name)
         end
         startimer()
         run_iter(scaling)
         local ticks = stoptimer()
         table.insert(times, ticks)
         if jitlog then
-            jitlog.addmarker("JITLOG(END): "..name)
+            jitlog.addmarker("END: "..name)
         end
         if jitstats then
             jitstats.getsnapshot(stop)
@@ -321,7 +325,7 @@ function runner.runbench(name, count, scaling)
         end
     end
     if jitlog then
-        jitlog.addmarker("JITLOG(STOP): "..name)
+        jitlog.addmarker("STOP: "..name)
     end
     
     -- Force a new line after our line of dots
@@ -385,6 +389,15 @@ function runner.run_benchmark_list(benchmarks, count, options)
             package.path = package_path
             package.cpath = package_cpath
         end
+    end
+    
+    if jitlog and options.inprocess then
+        local jlogname = options.jitlog
+        if not string.find(options.jitlog, "jlog") then
+            jlogname = jlogname..".jlog"
+        end
+        print("Saving jitlog to "..jlogname)
+        jitlog.save(jlogname)
     end
 end
 
@@ -540,7 +553,7 @@ function opt_map.jdump(args)
         g_opt.jdump = options
     end
 end
-function opt_map.jitlog(args) g_opt.jitlog = true end
+function opt_map.jitlog(args) g_opt.jitlog = optparam(args) end
 
 ------------------------------------------------------------------------------
 
