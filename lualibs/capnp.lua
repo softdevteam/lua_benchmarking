@@ -88,7 +88,7 @@ local function get_pointer_from_type(p32, field_type)
         error("not supported type: " .. field_type)
     end
 
-    return cast(t, p32)
+    return (cast(t, p32))
 end
 
 --- Use LuaJIT FFI to calculate xor for float number
@@ -498,7 +498,7 @@ function _M.write_list_data(p32, data, pos, elm_type, ...)
             local n, s = get_bit_offset(i - 1, 8)
             _M.write_bit(p + n, data[i], s)
         end
-        return round8(len / 8)
+        return (round8(len / 8))
     else
         local p = get_pointer_from_type(p32, elm_type)
         for i = 1, len do
@@ -507,7 +507,7 @@ function _M.write_list_data(p32, data, pos, elm_type, ...)
             _M.write_num(p + i - 1, data[i], elm_type)
         end
         local size = assert(list_size_map[type_to_size_type[elm_type]])
-        return round8(size * len)
+        return (round8(size * len))
     end
     return pos - start
 end
