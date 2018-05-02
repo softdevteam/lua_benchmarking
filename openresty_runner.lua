@@ -38,6 +38,8 @@ SOFTWARE.
 
 local ffi = require("ffi")
 local jitlog
+-- Make sure were using resty's faster regex functions
+require 'resty.core.regex'
 
 local f = io.open("/proc/self/cmdline", "rb")
 local cmdline = f:read("*all")
