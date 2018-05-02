@@ -207,6 +207,11 @@ function do_request()
     if BM_debug then
         io.stderr:write(string.format("[openresty_runner.lua] iteration %d/%d\n", BM_i, BM_iters))
     end
+    if jit.prngstate then
+        jit.prngstate(2654435761)
+    end
+    math_randomseed(2654435761)
+    
     if BM_instrument then
         jitlog.addmarker("BEGIN")
     end
