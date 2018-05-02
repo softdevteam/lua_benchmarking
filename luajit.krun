@@ -57,6 +57,11 @@ VMS = {
         'variants': ['default-lua'],
         'n_iterations': ITERATIONS_ALL_VMS,
     },
+    'NormalInstr': {
+        'vm_def': LuaJITVMDef("builds/normal/luajit", env=make_env("normal"), instrument=True),
+        'variants': ['default-lua'],
+        'n_iterations': ITERATIONS_ALL_VMS,
+    },
     'GC64': {
         'vm_def': LuaJITVMDef("builds/gc64/luajit", env=make_env("gc64"), instrument=INSTRUMENT),
         'variants': ['default-lua'],
@@ -80,21 +85,8 @@ VMS = {
 }
 
 BENCHMARKS = {
-    "binarytrees" : 2,
-    "nbody" : 10,
-    "fasta": 40,
-    "richards": 30,
-    "spectralnorm": 2,
-    "fannkuch_redux": 45,
-    "md5": 140,
-    "series": 2,
-    "luacheck_parser": 1,
-    "luacheck": 1,
     "capnproto_encode": 240,
     "capnproto_decode": 400,
-    "jsonlua_encode": 10,
-    "jsonlua_decode": 200,
-    "luafun": 4,
 }
 
 # list of "bench:vm:variant"
@@ -102,10 +94,10 @@ SKIP = [
     "capnproto_decode:GC64:*", # Sometime crashes with GC64
     "capnproto_decode:RaptorJIT:*", # Sometimes crashes as well
     #"*:Normal:*",
-    #"*:GC64:*",
-    #"*:NoJIT:*",
-    #"*:DualNum:*",
-    #"*:RaptorJIT:*",
+    "*:GC64:*",
+    "*:NoJIT:*",
+    "*:DualNum:*",
+    "*:RaptorJIT:*",
     #"luacheck:*:*",
     #"luacheck_parser:*:*",
 ]
