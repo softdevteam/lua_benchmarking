@@ -306,14 +306,14 @@ function runner.runbench(name, count, scaling)
             jitstats.getsnapshot(start)
         end
         if jitlog then
-            jitlog.addmarker("BEGIN: "..name)
+            jitlog.addmarker("BEGIN")
         end
         startimer()
         run_iter(scaling)
         local ticks = stoptimer()
         table.insert(times, ticks)
         if jitlog then
-            jitlog.addmarker("END: "..name)
+            jitlog.addmarker("END")
         end
         if jitstats then
             jitstats.getsnapshot(stop)
