@@ -50,6 +50,8 @@ function actions:stringmarker(msg, marker)
     self.mstart = marker
     self.mend = nil
     marker.n = self.itern
+    marker.stralloc = 0
+    marker.memalloc = 0
     self.itern = self.itern + 1
   elseif marker.label == end_marker then
     local stats = getdiff(self.mstart, marker)
@@ -131,6 +133,25 @@ function actions:section(msg, id, isstart, length)
   marker.section_times[name] = (marker.section_times[name] or 0ull) + length
   marker.section_counts[name] = (marker.section_counts[name] or 0) + 1
 end
+
+function actions:gcstate(msg)
+  local marker = self.mstart
+  if not marker then
+    return
+  end
+  local strnum = (self.last_strnum and self.last_strnum-msg.strnum) or msg.strnum
+  self.last_strnum = msg.strnum
+  if strnum > 0 then
+    marker.stralloc = marker.stralloc + strnum
+  end
+
+  local totalmem = (self.last_totalmem and self.last_totalmem-msg.totalmem) or msg.totalmem
+  self.last_totalmem = msg.totalmem
+  if totalmem > 0 then
+    marker.memalloc = marker.memalloc + totalmem
+  end
+end
+
 
 
 return mixin

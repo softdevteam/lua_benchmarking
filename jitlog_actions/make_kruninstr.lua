@@ -68,6 +68,8 @@ function action.logparsed(jlog)
   local traces = table.new(jlog.itern, 0)
   local aborts = table.new(jlog.itern, 0)
   local exits = table.new(jlog.itern, 0)
+  local memalloc = table.new(jlog.itern, 0)
+  local stralloc = table.new(jlog.itern, 0)
   local timers, counters
   
   if jlog.timers then
@@ -92,7 +94,9 @@ function action.logparsed(jlog)
       traces[n] = stats.traces
       aborts[n] = stats.aborts
       exits[n] = stats.exits
-      
+      memalloc[n] = marker.memalloc  or 0
+      stralloc[n] = marker.stralloc  or 0
+
       if marker.timers then
         for k, list in pairs(timers) do
           list[n] = marker.timers[k] or 0
@@ -117,6 +121,9 @@ function action.logparsed(jlog)
   add_ifnonzero(timer_lists, "traces", traces)
   add_ifnonzero(timer_lists, "aborts", aborts)
   add_ifnonzero(timer_lists, "exits", exits)
+  add_ifnonzero(timer_lists, "memalloc",   memalloc)
+  add_ifnonzero(timer_lists, "stralloc",   stralloc)
+
 
   if timers then
     for k, list in pairs(timers) do
