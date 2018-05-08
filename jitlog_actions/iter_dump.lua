@@ -26,36 +26,42 @@ end
 
 local mixin = {
   mixins = { "iter_annotate" },
-  actions = {
-    stringmarker = function(self, msg, marker)
-      if marker.label == "BEGIN" then
-          printf("------------------ Iteration %d --------------------------", self.itern)
-      end
-    end,
-    trace = function(self, msg, trace)
-      if self.mstart and self.mend then
-        printf("Trace(%d%s): outside iter %d", trace.id, trace.aborted and ", ABORT" or "",  self.mstart.n, trace:get_startlocation())
-      end
-
-      if not trace.abortcode then
-        printf("Trace(%d%s): start %s stop %s, link %s", trace.id, getparentid(trace), trace:get_startlocation(), trace:get_stoplocation(), trace.link)
-      else
-        printf("TraceAbort(%d%s): start: %s, stop: %s, reaason: %s ", trace.id, getparentid(trace), trace:get_startlocation(), 
-                trace:get_stoplocation(), trace.abortreason)
-      end
-      if not trace.abortcode then
-        printsnaps(self, trace)
-      end
-    end,
-    protobl = function(self, msg, blinfo)
-      printf("ProtoBlacklisted: %s, bcindex: %d", blinfo.proto:get_location(), blinfo.bcindex)
-    end,
-    alltraceflush = function(self, msg, flush)
-    end,
-    protoloaded = function(self, msg,  address, proto)
-      printf("ProtoLoaded: %s", proto:get_location())
-    end,
-  }
+  actions = {},
 }
+  
+local actions = mixin.actions
+
+function actions:stringmarker(msg, marker)
+  if marker.label == "BEGIN" then
+    printf("------------------ Iteration %d --------------------------", self.itern)
+  end
+end
+
+function actions:trace(msg, trace)
+  if self.mstart and self.mend then
+    printf("Trace(%d%s): outside iter %d", trace.id, trace.aborted and ", ABORT" or "",  self.mstart.n, trace:get_startlocation())
+  end
+
+  if not trace.abortcode then
+    printf("Trace(%d%s): start %s stop %s, link %s", trace.id, getparentid(trace), trace:get_startlocation(), trace:get_stoplocation(), trace.link)
+  else
+    printf("TraceAbort(%d%s): start: %s, stop: %s, reaason: %s ", trace.id, getparentid(trace), trace:get_startlocation(), 
+            trace:get_stoplocation(), trace.abortreason)
+  end
+  if self.dumpsnapshots then
+    printsnaps(self, trace)
+  end
+end
+
+function actions:protobl(msg, blinfo)
+  printf("ProtoBlacklisted: %s, bcindex: %d", blinfo.proto:get_location(), blinfo.bcindex)
+end
+
+function actions:alltraceflush(msg, flush)
+end
+
+function actions:protoloaded(msg,  address, proto)
+  printf("ProtoLoaded: %s", proto:get_location())
+end
 
 return mixin
