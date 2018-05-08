@@ -129,6 +129,16 @@ function action.logparsed(jlog)
     end
   end
   
+  if jlog.ktimers then
+    for label, list in pairs(jlog.ktimers) do
+      if type(list) == "function" then
+        -- Call the defered list generator
+        list = list(jlog)
+      end
+      add_ifnonzero(timer_lists, label, list)
+    end
+  end
+  
   if json then
     local data = {timers = timer_lists}
     result:write(json.encode(data))
