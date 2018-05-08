@@ -314,7 +314,10 @@ function runner.runbench(name, count, scaling)
         table.insert(times, ticks)
         if jitlog then
             jitlog.addmarker("END")
+            jitlog.write_perfcounts()
+            jitlog.write_perftimers()
         end
+        
         if jitstats then
             jitstats.getsnapshot(stop)
             local iter_jstats = jitstats.diffsnapshots(start, stop)
