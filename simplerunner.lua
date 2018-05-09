@@ -244,6 +244,7 @@ function runner.load_jitlog()
         os.exit(1)
     end
     jitlog.start()
+    jitlog.setgcstats_enabled(true)
 end
 
 function runner.loadbench(name)
@@ -296,6 +297,7 @@ function runner.runbench(name, count, scaling)
     
     if jitlog then
         jitlog.addmarker("START: "..name)
+        jitlog.reset_gcstats()
     end
 
     local run_iter = _G.run_iter
@@ -316,6 +318,7 @@ function runner.runbench(name, count, scaling)
             jitlog.addmarker("END")
             jitlog.write_perfcounts()
             jitlog.write_perftimers()
+            jitlog.write_gcstats()
         end
         
         if jitstats then
