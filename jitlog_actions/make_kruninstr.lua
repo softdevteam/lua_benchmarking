@@ -11,6 +11,12 @@ end
 local action = {
   mixins = {
     "iter_annotate"
+  },
+  config = {
+    skip_timers = false,
+    skip_counters = true,
+    ignore = {
+    },
   }
 }
 
@@ -26,6 +32,7 @@ local function splitpath(P)
 end
 
 function action.logopened(reader, logpath)
+  reader.ktimers = reader.ktimers or {}
   local dir, fname = splitpath(logpath)
   fname = splitext(fname):gsub("_", "__") .. ".json"
   reader.instr_path = dir .. "/" .. fname
@@ -38,6 +45,35 @@ local function allzero(list)
     end
   end
   return true
+end
+
+local function changes_aftern(list, n)
+  local prev = list[n]
+  for i=n, #list do
+    if list[n] ~= prev then
+      return true
+    end
+    prev = list[i]
+  end
+  return false
+end
+
+local function add_ifchanges(t, label, list)
+  if allzero(list) or not changes_aftern(list, 6) then
+    return
+  end
+  local entry = {label = label, data = list}
+  table.insert(t, entry)
+  return entry
+end
+
+local function add_ifnonzero(t, label, list)
+  if allzero(list) then
+    return
+  end
+  local entry = {label = label, data = list}
+  table.insert(t, entry)
+  return entry
 end
 
 local firstlist = true
@@ -55,16 +91,8 @@ local function write_timelist(file, name, values, last)
   return true
 end
 
-local function add_ifnonzero(t, label, list)
-  if allzero(list) then
-    return
-  end
-  local entry = {label = label, data = list}
-  table.insert(t, entry)
-  return entry
-end
-
 function action.logparsed(jlog)
+  local config = action.config
   local traces = table.new(jlog.itern, 0)
   local aborts = table.new(jlog.itern, 0)
   local exits = table.new(jlog.itern, 0)
@@ -72,14 +100,14 @@ function action.logparsed(jlog)
   local stralloc = table.new(jlog.itern, 0)
   local timers, counters
   
-  if jlog.timers then
+  if jlog.timers and not config.skip_timers then
     timers = {}
     for k, v in pairs(jlog.timers) do
       timers[k] = table.new(jlog.itern, 0)
     end
   end
 
-  if jlog.counters then
+  if jlog.counters and not config.skip_counters then
     counters = {}
     for k, v in pairs(jlog.counters) do
       counters[k] = table.new(jlog.itern, 0)
@@ -97,12 +125,12 @@ function action.logparsed(jlog)
       memalloc[n] = marker.memalloc  or 0
       stralloc[n] = marker.stralloc  or 0
 
-      if marker.timers then
+      if timers and marker.timers then
         for k, list in pairs(timers) do
           list[n] = marker.timers[k] or 0
         end
       end
-      if marker.counters then
+      if counters and marker.counters then
         for k, list in pairs(counters) do
           list[n] = marker.counters[k] or 0
         end
@@ -126,13 +154,18 @@ function action.logparsed(jlog)
 
 
   if timers then
-    for k, list in pairs(timers) do
-      add_ifnonzero(timer_lists, k, list)
+    for label, list in pairs(timers) do
+      if not config.ignore[label] then
+        add_ifnonzero(timer_lists, label, list)
+      end
     end
   end
   if counters then
     for k, list in pairs(counters) do
-      add_ifnonzero(timer_lists, k.."_count", list)
+      local label = k.."_count"
+      if not config.ignore[label] then
+        add_ifnonzero(timer_lists, label, list)
+      end
     end
   end
   
@@ -142,9 +175,13 @@ function action.logparsed(jlog)
         -- Call the defered list generator
         list = list(jlog)
       end
-      add_ifnonzero(timer_lists, label, list)
+      if not config.ignore[label] then
+        add_ifchanges(timer_lists, label, list)
+      end
     end
   end
+  
+  table.sort(timer_lists, function(a,b) return a.label < b.label end)
   
   if json then
     local data = {timers = timer_lists}
