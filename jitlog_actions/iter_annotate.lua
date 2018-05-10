@@ -152,6 +152,14 @@ function actions:gcstate(msg)
   end
 end
 
+function actions:gcstats(msg, gcstats)
+  local marker = self.mstart
+  if not marker then
+    return
+  end
+  assert(not marker.gcstats, "more one gcstats found for an iteration")
+  marker.gcstats = gcstats
+end
 
 
 return mixin
