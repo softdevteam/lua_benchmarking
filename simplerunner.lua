@@ -14,6 +14,18 @@ local function add_package_path(basepath)
     package.cpath = string.format("%s/?.%s;%s/?/?.%s;%s", basepath, ext, basepath, ext, package.cpath)
 end
 
+local devnull
+if package.config:sub(1,1) == "\\" then
+  -- Use nul on windows https://stackoverflow.com/questions/313111/is-there-a-dev-null-on-windows
+  devnull = io.open("nul")
+else
+  devnull = io.open("/dev/null")
+end
+
+function io.write_devnull(...)
+  return (devnull:write(...))
+end
+
 ffi = require("ffi")
 
 local function table_filter(t, f)
