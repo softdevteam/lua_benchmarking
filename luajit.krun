@@ -117,6 +117,7 @@ BENCHMARKS = {
     "scimark_sparse" : 12000,
     "scimark_mc" : 13000000,
     "revcomp" : 45,
+    "moonscript" : 1,
 }
 
 # list of "bench:vm:variant"
