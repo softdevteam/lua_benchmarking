@@ -14,6 +14,8 @@ function add_luapackage_path(basepath, addtostart)
         package.path = string.format("%s;%s/?.lua;%s/?/init.lua", package.path, basepath, basepath)
     end
 end
+
+add_luapackage_path("builds/normal32_repo", true)
 add_luapackage_path("lualibs", true)
 
 local success

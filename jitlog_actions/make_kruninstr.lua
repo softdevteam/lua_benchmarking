@@ -16,6 +16,8 @@ local action = {
     skip_timers = false,
     skip_counters = true,
     ignore = {
+      trace_exit = true,
+      race_exit_restore = true,
     },
   }
 }
