@@ -40,6 +40,18 @@ local ffi = require("ffi")
 local json = require("json_nojit")
 local jitstats
 
+local devnull
+if package.config:sub(1,1) == "\\" then
+  -- Use nul on windows https://stackoverflow.com/questions/313111/is-there-a-dev-null-on-windows
+  devnull = io.open("nul")
+else
+  devnull = io.open("/dev/null")
+end
+
+function io.write_devnull(...)
+  return (devnull:write(...))
+end
+
 -- @param addtostart Pass true to insert the search path at the start of the module search path list.
 function add_luapackage_path(basepath, addtostart)
     assert(type(basepath) == "string" and #basepath > 0)
