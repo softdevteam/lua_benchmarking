@@ -136,7 +136,9 @@ end
 local benchdir, scriptname = string.match(BM_benchmark, "^(.-)[/]?([^/]*)$")
 if benchdir and scriptname then
     add_luapackage_path(benchdir, true)
+    add_luapackage_path(benchdir.."/rocks/modules", true)
     add_cpackage_path(benchdir, true)
+    add_cpackage_path(benchdir.."/rocks/modules", true)
 end
 
 if BM_instrument then

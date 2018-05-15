@@ -251,8 +251,8 @@ end
 function runner.loadbench(name)
     assert(not run_iter, "another benchmark is still loaded")
     -- Add the benchmark's directory to the module search path so it can correctly load any extra modules from there
-    add_package_path("benchmarks/"..name)
-    
+    add_package_path("benchmarks/"..name, true)
+    add_package_path("benchmarks/"..name.."/rocks/modules", true)
     if loading_jitstats then
         jitstats.start()
     end
