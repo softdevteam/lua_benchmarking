@@ -39,6 +39,10 @@
     "revcomp" : 45,
     "moonscript" : 1,
     "resty_json" : 450,
+    "quicksort" : 1000000,
+    "table_cmpsort" : 100000,
+    "radixsort" : 1000000,
+    "heapsort" : 1000000,
   },
 
   "info" : {
@@ -47,5 +51,6 @@
     "jsonlua_encode" : { "ffirequired" : true },
     "jsonlua_decode" : { "ffirequired" : true },
     "luafun" : { "ffirequired" : true },
+    "radixsort" : { "ffirequired" : true },
   }
 }
