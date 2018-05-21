@@ -38,6 +38,7 @@
     "scimark_mc" : 13000000,
     "revcomp" : 45,
     "moonscript" : 1,
+    "resty_json" : 450,
   },
 
   "info" : {
