@@ -268,7 +268,7 @@ function runner.loadbench(name)
     end
 end
 
-function runner.runbench(name, count, scaling)
+function runner.runbench(name, count, scaling, nojit)
     scaling = scaling or 1
     runner.loadbench(name)
 
@@ -288,9 +288,13 @@ function runner.runbench(name, count, scaling)
 
     -- Reset all the hot counters to their starting values right before we run the benchmark
     if jit then
-        -- lj_dispatch_update triggers a hotcount reset when the JIT is turned off and back on again.
-        jit.off()
-        jit.on()
+        if not nojit then
+            -- lj_dispatch_update triggers a hotcount reset when the JIT is turned off and back on again.
+            jit.offf()
+            jit.on()
+        else
+            jit.off()
+        end
     end
 
     local run_iter = _G.run_iter
@@ -354,7 +358,7 @@ function runner.run_benchmark_list(benchmarks, count, options)
         local stats
 
         if options.inprocess then
-            local times, jstats = runner.runbench(name, count, scaling)
+            local times, jstats = runner.runbench(name, count, scaling, options.nojit)
             stats = runner.calculate_stats(times)
             stats.times = times
             print("  " .. runner.fmtstats(stats))
@@ -400,7 +404,7 @@ function runner.subprocess_run(benchmark, count, scaling, parent_options)
     subprocess = true
     runner.processoptions(parent_options)
 
-    local times, jstats = runner.runbench(benchmark, count, scaling)
+    local times, jstats = runner.runbench(benchmark, count, scaling, parent_options.nojit)
     local stats = runner.calculate_stats(times)
     print("  " .. runner.fmtstats(stats))
     if jitstats then
@@ -524,6 +528,13 @@ function opt_map.jdump(args)
     end
 end
 
+function opt_map.nojit()
+    if jit then
+        jit.off()
+    end
+    g_opt.nojit = true
+end
+
 ------------------------------------------------------------------------------
 
 -- Parse single option.
@@ -593,6 +604,10 @@ function runner.processoptions(options)
     -- Don't pointlessly run these options in the main process if we're running benchmarks in a child process
     if not subprocess and not options.inprocess then
         return
+    end
+    
+    if options.nojit and jit then
+        jit.off()
     end
 
     if options.jitstats then
