@@ -5,6 +5,7 @@
 -- Credits go to the original authors Roldan Pozo and Bruce Miller.
 -- See: http://math.nist.gov/scimark2/
 ------------------------------------------------------------------------------
+local ffi = require("ffi")
 local bit = require("bit")
 local band, sar = bit.band, bit.arshift
 
