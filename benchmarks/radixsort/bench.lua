@@ -1,4 +1,5 @@
 -- LSD radix sort implementation based on code from http://www.osix.net/modules/article/?id=704
+local ffi = require("ffi")
 local array_generator = require("array_generator")
 local band, rshift = bit.band, bit.rshift
 
