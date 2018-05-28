@@ -72,10 +72,10 @@ end
 local function ensure_destination(item)
     if config.link_dirs then
         lfs.mkdir(config.root .. '/' .. config.build_dir .. '/' .. item.directory .. '/' .. item.link)
-        return config.build_dir .. '/' .. item.directory .. '/' .. item.link .. '/index.html'
+        return config.root .. '/' .. config.build_dir .. '/' .. item.directory .. '/' .. item.link .. '/index.html'
     end
 
-    return config.build_dir .. '/' .. item.directory .. '/' .. item.link
+    return config.root .. '/' .. config.build_dir .. '/' .. item.directory .. '/' .. item.link
 end
 
 
@@ -253,7 +253,7 @@ local function load_markdowns(directory, template)
 
             -- Insert to items
             items[#items + 1] = item
-            print('\t' .. item.title)
+           -- print('\t' .. item.title)
         end
     end
 

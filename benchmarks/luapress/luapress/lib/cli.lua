@@ -18,7 +18,9 @@ end
 
 
 local function error(message)
+    _G.error(message)
     print('--> ' .. colors('%{red bright}' .. message))
+    
     os.exit(1)
 end
 
