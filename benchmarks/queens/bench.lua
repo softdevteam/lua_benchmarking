@@ -20,8 +20,7 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-local queens = {} do
-setmetatable(queens, {__index = require'benchmark'})
+local queens = {}
 
 function queens:benchmark ()
     local result = true
@@ -35,14 +34,18 @@ function queens:verify_result (result)
     return result
 end
 
-function queens:queens ()
+function queens:init()
     self.free_rows  = {true, true, true, true, true, true, true, true}
     self.free_maxs  = {true, true, true, true, true, true, true, true,
                        true, true, true, true, true, true, true, true}
     self.free_mins  = {true, true, true, true, true, true, true, true,
                        true, true, true, true, true, true, true, true}
     self.queen_rows = {-1,   -1,   -1,   -1,   -1,   -1,   -1,   -1}
-    return self:place_queen(1)
+end
+
+function queens:setfirst(row)
+  self.queen_rows[row] = 1
+  self:set_row_column(row, 1, false)
 end
 
 function queens:place_queen (c)
@@ -72,6 +75,12 @@ function queens:set_row_column (r, c, v)
     self.free_mins[c - r + 8] = v
 end
 
-end -- object queens
-
-return queens
+function run_iter(n)
+    for i = 1, n do
+        for firstrow = 1, 8 do
+            queens:init()
+            queens:setfirst(firstrow)
+            assert(queens:place_queen(2))
+        end
+    end
+end

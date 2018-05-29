@@ -619,7 +619,7 @@ end -- class LoopTesterApp
 
 
 local havlak = {} do
-setmetatable(havlak, {__index = require'benchmark'})
+setmetatable(havlak, {})
 
 function havlak:inner_benchmark_loop (inner_iterations)
     local result = LoopTesterApp.new():main(inner_iterations, 50, 10, 10, 5)
@@ -645,5 +645,11 @@ function havlak:verify_result (result, inner_iterations)
 end
 
 end -- object havlak
+
+function run_iter(n)
+    local result = LoopTesterApp.new():main(n, n, 10, 10, 5)
+    assert(result[1] > 0 and result[2] > 0)
+    return
+end
 
 return havlak

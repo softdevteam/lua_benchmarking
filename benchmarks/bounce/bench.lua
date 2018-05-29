@@ -66,12 +66,10 @@ end
 
 end -- class Ball
 
-local bounce = {} do
-setmetatable(bounce, {__index = require'benchmark'})
+local ball_count = 100
 
-function bounce:benchmark ()
+local function benchmark(ticks)
     local random     = Random.new()
-    local ball_count = 100
     local bounces    = 0
     local balls      = {}
 
@@ -79,7 +77,7 @@ function bounce:benchmark ()
         balls[i] = Ball.new(random)
     end
 
-    for _ = 1, 50 do
+    for _ = 1, ticks do
         for i = 1, #balls do
             local ball = balls[i]
             if ball:bounce() then
@@ -90,10 +88,8 @@ function bounce:benchmark ()
     return bounces
 end
 
-function bounce:verify_result (result)
-    return 1331 == result
+function run_iter(n)
+    local bounces = benchmark(n)
+    assert(bounces > ball_count)
+    return
 end
-
-end -- object bounce
-
-return bounce

@@ -123,6 +123,11 @@ BENCHMARKS = {
     "table_cmpsort" : 100000,
     "radixsort" : 1000000,
     "heapsort" : 1000000,
+    "havlak" : 1,
+    "collisiondetector" : 35,
+    "deltablue" : 4000,
+    "queens" : 7000,
+    "bounce" : 100000,
 }
 
 # list of "bench:vm:variant"

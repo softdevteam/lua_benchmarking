@@ -737,8 +737,7 @@ end
 
 end -- class Planner
 
-local deltablue = {} do
-setmetatable(deltablue, {__index = require'benchmark'})
+local deltablue = {}
 
 function deltablue:inner_benchmark_loop (inner_iterations)
     Planner.chain_test(inner_iterations)
@@ -746,6 +745,6 @@ function deltablue:inner_benchmark_loop (inner_iterations)
     return true
 end
 
-end -- object deltablue
-
-return deltablue
+function run_iter(n)
+    return (deltablue:inner_benchmark_loop(n))
+end

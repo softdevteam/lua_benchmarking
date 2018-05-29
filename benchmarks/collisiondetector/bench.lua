@@ -20,6 +20,10 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+if pcall(require, "jit.opt") then
+    require("jit.opt").start("maxmcode=8000", "maxtrace=5000")
+end
+
 local Vector = require'som'.Vector
 local MIN_X = 0.0
 local MIN_Y = 0.0
@@ -886,7 +890,6 @@ end
 end -- class Simulator
 
 local cd = {} do
-setmetatable(cd, {__index = require'benchmark'})
 
 function cd:benchmark (num_aircrafts)
     local num_frames = 200
@@ -928,4 +931,9 @@ end
 
 end -- object cd
 
-return cd
+function run_iter(n)
+    local result = cd:benchmark(n)
+    assert(result > 0)
+    return result
+end
+
