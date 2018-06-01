@@ -87,15 +87,19 @@ local runner = {
 local loaded = false
 local startimer, stoptimer
 
-function runner.init()
+function runner.init(is_subprocess)
     if loaded then
+        assert((is_subprocess == true and subprocess) or not subprocess)
         return true
     end
     loaded = true
+    subprocess = is_subprocess
     oskind = runner.detectos()
     add_package_path("lualibs")
     add_package_path("rocks/modules")
-    runner.loadbenchinfo()
+    if not subprocess then
+        runner.loadbenchinfo()
+    end
     
     success, jit = pcall(require, "jit")   
     local hasjit = success and pcall(jit.on)
@@ -112,11 +116,7 @@ function runner.init()
     -- Raptor jit removed jit.util so only try to use if its available
     success, jit_util = pcall(require, "jit.util")
 
-    if success then
-        if not pcall(require, "jit.vmdef") then
-            add_package_path("luajit_repo/src")
-        end
-    else
+    if not success then
         jit_util = nil
     end
 
@@ -380,7 +380,7 @@ function runner.run_benchmark_list(benchmarks, count, options)
                 jitstats.print()
             end
         else
-           runner.runbench_outprocess(name, count, scaling, options)
+           runner.runbench_outprocess(name, count, scaling, options.vm)
         end
 
         if options.inprocess then
@@ -394,12 +394,12 @@ function runner.run_benchmark_list(benchmarks, count, options)
     end
 end
 
-function runner.runbench_outprocess(name, count, scaling, options)
+function runner.runbench_outprocess(name, count, scaling, vm)
     local lc = require("luachild")
     local read, write = lc.pipe()
 
     local p = lc.spawn{
-        command = arg[-1],
+        command = vm or arg[-1],
         args = {
             arg[0], "--childprocess", name, count, scaling, unpack(arg, 1) 
         },
@@ -412,9 +412,9 @@ function runner.runbench_outprocess(name, count, scaling, options)
 end
 
 function runner.subprocess_run(benchmark, count, scaling, parent_options)
+    assert(subprocess == true)
     scaling = tonumber(scaling)
     count = tonumber(count)
-    subprocess = true
     runner.processoptions(parent_options)
 
     local times, jstats = runner.runbench(benchmark, count, scaling, parent_options.nojit)
@@ -561,6 +561,8 @@ function opt_map.nojit()
     g_opt.nojit = true
 end
 
+function opt_map.vm(args) g_opt.vm = optparam(args) end
+
 ------------------------------------------------------------------------------
 
 -- Parse single option.
@@ -603,7 +605,19 @@ function runner.parse_commandline(args)
         end
     end
 
+    if g_opt.vm then
+        g_opt.vmdir = "builds/"..g_opt.vm
+        g_opt.vm = string.format("builds/%s/luajit", g_opt.vm)
+        if(not subprocess) then
+            print("Using "..g_opt.vm.." for the Lua VM ")
+        end
+    end
+    
     g_opt.count = g_opt.count or 30
+    
+    if subprocess then
+        return benchmarks, g_opt
+    end
 
     local benchmarks
     if #g_opt.benchmarks > 0 then
@@ -627,6 +641,15 @@ function runner.parse_commandline(args)
 end
 
 function runner.processoptions(options)
+    if options.vmdir then
+        add_package_path(options.vmdir)
+    else
+        local vmdir, name = arg[-1]:gsub("\\\\", "\\"):match("^(.+)[/\\](.+)$")
+        if vmdir then
+            add_package_path(vmdir)
+        end
+    end
+
     -- Don't pointlessly run these options in the main process if we're running benchmarks in a child process
     if not subprocess and not options.inprocess then
         return
@@ -634,6 +657,10 @@ function runner.processoptions(options)
     
     if options.nojit and jit then
         jit.off()
+    end
+
+    if (options.jdump or options.jitstats) and not pcall(require, "jit.vmdef") then
+        error("Failed to load vmdef module")
     end
 
     if options.jitstats then
@@ -686,13 +713,13 @@ function runner.filter_benchmarks(benchmarks)
     return table_filter(benchmarks, check_filters)
 end
 
-runner.init()
-
 if arg[1] == "--childprocess" then
+    runner.init(true)
     local benchmark, count, scaling = unpack(arg, 2)
     local _, options = runner.parse_commandline({unpack(arg, 5)})
     runner.subprocess_run(benchmark, count, scaling, options)
 else
+    runner.init(false)
     local benchmarks, options = runner.parse_commandline(arg)
     runner.processoptions(options)
 
