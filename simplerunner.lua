@@ -236,6 +236,11 @@ function runner.load_jitstats()
     return success
 end
 
+local jprof_mode, jprof_output
+function runner.start_profiler()
+    jit_profile.start(jprof_mode, jprof_output)
+end
+
 function runner.jitfunc(f, n)
     assert(jit_util, "cannot prejit with no jit.util")
     n = n or 200
@@ -283,6 +288,10 @@ function runner.runbench(name, count, scaling)
     else
        times = {}
     end
+    if jit_profile then
+        runner.start_profiler()
+    end
+    
     io.write("Running "..name..": ")
     io.flush()
 
@@ -316,6 +325,10 @@ function runner.runbench(name, count, scaling)
     -- Force a new line after our line of dots
     io.write("\n")
     io.flush()
+    
+    if jit_profile then
+        jit_profile.stop()
+    end
 
     if jitstats then
         jitstats.stop()
@@ -494,6 +507,7 @@ Usage: simplerunner [OPTION] [<benchmark>] [<count>]
 
   --jitstats           Collect and print jit statisitcs from running the benchmarks.
   --jdump options      Run LuaJIT's jit.dump module with the specifed options.
+  --jprof options [, ourout file] Run the benchmaks under LuaJIT's sample based profiler
   --benchloadjitstats  Also collect jitstats when loading a benchmark
   --nogc               Run the benchmarks with the GC disabled.
   --norandomize        Don't randomize the run order of the benchmarks.
@@ -521,6 +535,18 @@ function opt_map.jdump(args)
         g_opt.jdump = options:sub(1, outfile-1)
     else
         g_opt.jdump = options
+    end
+end
+
+function opt_map.jprof(args)
+    local options = optparam(args)
+    local outfile = options:find(",")
+
+    if outfile then
+        g_opt.jprof_output = options:sub(outfile + 1)
+        g_opt.jprof = options:sub(1, outfile-1)
+    else
+        g_opt.jprof = options
     end
 end
 
@@ -609,6 +635,11 @@ function runner.processoptions(options)
     if options.jdump then
         jit_dump = require("jit.dump")
         jit_dump.on(options.jdump, options.jdump_output)
+    end
+    
+    if options.jprof then
+        jit_profile = require("jit.p")
+        jprof_mode = options.jprof
     end
 end
 
