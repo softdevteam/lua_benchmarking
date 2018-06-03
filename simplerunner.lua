@@ -253,6 +253,27 @@ function runner.jitfunc(f, n)
     assert(stopbc == startbc + 2, "failed to prejit method")
 end
 
+function runner.load_jitlog()
+    success, jitlog = pcall(require, "jitlog")
+
+    if not success then
+        print("Error: Failed to load jitlog")
+        os.exit(1)
+    end
+    jitlog.start()
+    if jitlog.setgcstats_enabled then
+        jitlog.setgcstats_enabled(true)
+    end
+end
+
+local function save_jitlog(path)
+    if not string.find(path, ".jlog") then
+        path = path..".jlog"
+    end
+    print("Saving jitlog to "..path)
+    jitlog.save(path)
+end
+
 function runner.loadbench(name)
     assert(not run_iter, "another benchmark is still loaded")
     -- Add the benchmark's directory to the module search path so it can correctly load any extra modules from there
@@ -260,6 +281,9 @@ function runner.loadbench(name)
     add_package_path("benchmarks/"..name.."/rocks/modules", true)
     if loading_jitstats then
         jitstats.start()
+    end
+    if jitlog then
+        jitlog.addmarker("JITLOG(LOAD): "..name)
     end
     dofile("benchmarks/"..name.."/bench.lua")
 
@@ -306,6 +330,13 @@ function runner.runbench(name, count, scaling, nojit)
         end
     end
 
+    if jitlog then
+        jitlog.addmarker("START: "..name)
+        if jitlog.reset_gcstats then
+            jitlog.reset_gcstats()
+        end
+    end
+
     local run_iter = _G.run_iter
     for i = 1, count do
         io.write(".")
@@ -313,10 +344,24 @@ function runner.runbench(name, count, scaling, nojit)
         if jitstats then
             jitstats.getsnapshot(start)
         end
+        if jitlog then
+            jitlog.addmarker("BEGIN")
+        end
         startimer()
         run_iter(scaling)
         local ticks = stoptimer()
         table.insert(times, ticks)
+        if jitlog then
+            jitlog.addmarker("END")
+            if jitlog.write_perfcounts then
+                jitlog.write_perfcounts()
+                jitlog.write_perftimers()
+            end
+            if jitlog.write_gcstats then
+                jitlog.write_gcstats()
+            end
+        end
+        
         if jitstats then
             jitstats.getsnapshot(stop)
             local iter_jstats = jitstats.diffsnapshots(start, stop)
@@ -326,6 +371,10 @@ function runner.runbench(name, count, scaling, nojit)
             end
         end
     end
+    if jitlog then
+        jitlog.addmarker("STOP: "..name)
+    end
+    
     -- Force a new line after our line of dots
     io.write("\n")
     io.flush()
@@ -392,6 +441,10 @@ function runner.run_benchmark_list(benchmarks, count, options)
             package.cpath = package_cpath
         end
     end
+    
+    if jitlog and options.inprocess then
+        save_jitlog(options.jitlog)
+    end
 end
 
 function runner.runbench_outprocess(name, count, scaling, vm)
@@ -422,6 +475,10 @@ function runner.subprocess_run(benchmark, count, scaling, parent_options)
     print("  " .. runner.fmtstats(stats))
     if jitstats then
         jitstats.print()
+    end
+
+    if jitlog then
+        save_jitlog(parent_options.jitlog)
     end
 
     os.exit(0)
@@ -541,6 +598,7 @@ function opt_map.jdump(args)
         g_opt.jdump = options
     end
 end
+function opt_map.jitlog(args) g_opt.jitlog = optparam(args) end
 
 function opt_map.jprof(args)
     local options = optparam(args)
@@ -666,6 +724,10 @@ function runner.processoptions(options)
     if options.jitstats then
         runner.load_jitstats()
     end
+
+	if g_opt.jitlog then
+		runner.load_jitlog()
+	end
 
     if options.nogc then
         print("Garbage collector disabled")
