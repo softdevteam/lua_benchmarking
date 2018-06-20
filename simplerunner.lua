@@ -253,7 +253,7 @@ function runner.jitfunc(f, n)
     assert(stopbc == startbc + 2, "failed to prejit method")
 end
 
-function runner.load_jitlog()
+function runner.load_jitlog(path)
     success, jitlog = pcall(require, "jitlog")
 
     if not success then
@@ -261,6 +261,13 @@ function runner.load_jitlog()
         os.exit(1)
     end
     jitlog.start()
+    if path then
+        if not string.find(path, ".jlog") then
+            path = path..".jlog"
+        end
+        print("Saving jitlog to "..path)
+       -- jitlog.setlogsink(path)
+    end
     if jitlog.setgcstats_enabled then
         jitlog.setgcstats_enabled(true)
     end
@@ -270,7 +277,7 @@ local function save_jitlog(path)
     if not string.find(path, ".jlog") then
         path = path..".jlog"
     end
-    print("Saving jitlog to "..path)
+   -- print("Saving jitlog to "..path)
     jitlog.save(path)
 end
 
@@ -726,7 +733,7 @@ function runner.processoptions(options)
     end
 
 	if g_opt.jitlog then
-		runner.load_jitlog()
+		runner.load_jitlog(g_opt.jitlog)
 	end
 
     if options.nogc then
