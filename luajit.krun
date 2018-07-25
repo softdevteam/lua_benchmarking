@@ -14,12 +14,6 @@ DIR = os.getcwd()
 
 VM_ENV = '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(os.path.join(DIR, "lualibs"))
 
-def make_env(vmdir):
-  basedir = os.path.join(DIR, "builds", vmdir)
-  return {
-    'LUA_PATH' : VM_ENV + '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(basedir)
-  }
-
 HEAP_LIMIT = 2097152  # KiB
 STACK_LIMIT = 8192  # KiB
 
@@ -31,6 +25,23 @@ N_EXECUTIONS = 15  # Number of fresh process executions.
 ITERATIONS_ALL_VMS = 1500
 ITERATIONS_NO_JIT = 100
 INSTRUMENT = False
+
+def make_env(vmdir, extra=None):
+    basedir = os.path.join(DIR, "builds", vmdir)
+    ret = {
+        'LUA_PATH' : VM_ENV + '"{0}/?/init.lua;{0}/?.lua;{0}/?/?.lua;"'.format(basedir)
+    }
+    if extra is not None:
+        ret.update(extra)
+    return ret
+
+def makevmdef(dirname, instrument=False, env_extra=None, n_iterations=None):
+    return {
+        'vm_def': LuaJITVMDef(os.path.join("builds/", dirname, "luajit"), 
+                              env=make_env(dirname, env_extra), instrument=instrument),
+        'variants': ['default-lua'],
+        'n_iterations': n_iterations or ITERATIONS_ALL_VMS,
+    }
 
 class LuaJITVMDef(GenericScriptingVMDef):
     JIT_STATS_MARKER = "@@@ JIT_STATS "
@@ -52,31 +63,11 @@ class LuaJITVMDef(GenericScriptingVMDef):
                                                 sync_disks=sync_disks)
 
 VMS = {
-    'Normal': {
-        'vm_def': LuaJITVMDef("builds/normal/luajit", env=make_env("normal"), instrument=INSTRUMENT),
-        'variants': ['default-lua'],
-        'n_iterations': ITERATIONS_ALL_VMS,
-    },
-    'GC64': {
-        'vm_def': LuaJITVMDef("builds/gc64/luajit", env=make_env("gc64"), instrument=INSTRUMENT),
-        'variants': ['default-lua'],
-        'n_iterations': ITERATIONS_ALL_VMS,
-    },
-    'NoJIT': {
-        'vm_def': LuaJITVMDef("builds/nojit/luajit", env=make_env("nojit")),
-        'variants': ['default-lua'],
-        'n_iterations': ITERATIONS_NO_JIT,
-    },
-    'DualNum': {
-        'vm_def': LuaJITVMDef("builds/dualnum/luajit", env=make_env("dualnum"), instrument=INSTRUMENT),
-        'variants': ['default-lua'],
-        'n_iterations': ITERATIONS_ALL_VMS,
-    },
-    'RaptorJIT': {
-        'vm_def': LuaJITVMDef("builds/raptorjit/luajit", env=make_env("raptorjit")),
-        'variants': ['default-lua'],
-        'n_iterations': ITERATIONS_ALL_VMS,
-    },
+    'Normal': makevmdef("normal", instrument=INSTRUMENT),
+    'GC64': makevmdef("gc64", instrument=INSTRUMENT),
+    'NoJIT': makevmdef("nojit", instrument=INSTRUMENT, n_iterations=ITERATIONS_NO_JIT),
+    'DualNum': makevmdef("dualnum", instrument=INSTRUMENT),
+    'RaptorJIT': makevmdef("raptorjit", instrument=INSTRUMENT),
 }
 
 BENCHMARKS = {
