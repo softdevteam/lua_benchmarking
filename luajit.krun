@@ -63,11 +63,7 @@ class LuaJITVMDef(GenericScriptingVMDef):
                                                 sync_disks=sync_disks)
 
 VMS = {
-    'Normal': makevmdef("normal", instrument=INSTRUMENT),
-    'GC64': makevmdef("gc64", instrument=INSTRUMENT),
-    'NoJIT': makevmdef("nojit", instrument=INSTRUMENT, n_iterations=ITERATIONS_NO_JIT),
-    'DualNum': makevmdef("dualnum", instrument=INSTRUMENT),
-    'RaptorJIT': makevmdef("raptorjit", instrument=INSTRUMENT),
+    'Counters_lhot28': makevmdef("counters", env_extra = {"hotloop":  28}, instrument=INSTRUMENT),
 }
 
 BENCHMARKS = {
@@ -86,39 +82,6 @@ BENCHMARKS = {
     "jsonlua_encode": 10,
     "jsonlua_decode": 200,
     "luafun": 4,
-
-    "array3d": 180,
-    "coroutine_ring" : 3300000,
-    "euler14" : 3500000,
-    "nsieve" : 9,
-    "nsieve_bit" : 9,
-    "life" : 2000,
-    "mandelbrot" : 2000,
-    "mandelbrot_bit" : 2000,
-    "ray" : 128,
-    "meteor" : 1,
-    "pidigits" : 1150,
-    "recursive_ack" : 10,
-    "recursive_fib" : 37,
-    "partialsums" : 2000000,
-    "knucleotide" : 1,
-    "scimark_fft" : 2500,
-    "scimark_lu"  : 450,
-    "scimark_sor"  : 3100,
-    "scimark_sparse" : 12000,
-    "scimark_mc" : 13000000,
-    "revcomp" : 45,
-    "moonscript" : 1,
-    "resty_json" : 450,
-    "quicksort" : 1000000,
-    "table_cmpsort" : 100000,
-    "radixsort" : 1000000,
-    "heapsort" : 1000000,
-    "havlak" : 1,
-    "collisiondetector" : 35,
-    "deltablue" : 4000,
-    "queens" : 7000,
-    "bounce" : 100000,
 }
 
 # list of "bench:vm:variant"
@@ -145,7 +108,7 @@ SKIP = [
 #POST_EXECUTION_CMDS = ["sudo service cron start"]
 
 # CPU pinning (off by default)
-ENABLE_PINNING = False
+ENABLE_PINNING = True
 
 # Lower and upper bound for acceptable APERF/MPERF ratios
 #AMPERF_RATIO_BOUNDS = 0.995, 1.005
