@@ -123,6 +123,24 @@ local BM_instdatadir = arg[5]
 local BM_key = arg[6]
 local BM_pexecidx = arg[7]
 
+local jitparams = {
+    hotfunc = tonumber(os.getenv("hotfunc")),
+    hotloop = tonumber(os.getenv("hotloop")),
+}
+
+local function setjitparams(values)
+    local options = {}
+    for param, value in pairs(values) do
+        assert(value >= 0)
+        options[#options + 1] = string.format("%s=%d", param, value)
+    end
+    if #options > 0 then
+        require("jit.opt").start(unpack(options))
+    end
+end
+
+setjitparams(jitparams)
+
 if #arg ~= 4 and #arg ~= 7 then
     io.stderr:write("usage: iterations_runner.lua <benchmark> " ..
                     "<# of iterations> <benchmark param>\n           " ..
