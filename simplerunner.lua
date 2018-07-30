@@ -628,6 +628,16 @@ end
 
 function opt_map.vm(args) g_opt.vm = optparam(args) end
 
+function opt_map.O(args)
+    local name = optparam(args)
+    local k, v = name:match("([^=]+)=(.+)")
+    if k then
+        g_opt.jitparams[k] = assert(tonumber(v), "jit param value was not a number: ".. name)
+    else
+        g_opt.jitparams[name] = true
+    end
+end
+
 ------------------------------------------------------------------------------
 
 -- Parse single option.
@@ -645,6 +655,7 @@ function runner.parse_commandline(args)
     -- Default options.
     g_opt.benchmarks = {}
     g_opt.excludes = {}
+    g_opt.jitparams = {}
     -- Process all option arguments.
     args.argn = 1
     repeat
@@ -751,6 +762,22 @@ function runner.processoptions(options)
     if options.jprof then
         jit_profile = require("jit.p")
         jprof_mode = options.jprof
+	end
+
+    if next(options.jitparams) then
+        runner.setjitparams(options.jitparams)
+    end
+end
+
+function runner.setjitparams(values)
+    local options = {}
+    for param, value in pairs(values) do
+        assert(value >= 0)
+        options[#options + 1] = string.format("%s=%d", param, value)
+    end
+    if #options > 0 then
+        print(unpack(options))
+        require("jit.opt").start(unpack(options))
     end
 end
 
