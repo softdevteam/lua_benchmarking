@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Make sure we bail out if any of our commands fail, like the commit lock
+set -e
+
 #Build the various interesting flavours of LuaJIT
 if [ $# -gt 1 ]; then
   echo "Usage: build.sh [<LuaJIT source dir>]" 2>&1

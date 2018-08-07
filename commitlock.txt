@@ -1,2 +1,2 @@
-luajit_commitid=655d8f29ae0a3c4cd1c57c6c8c88e6be41aed21c
+luajit_commitid=a6e64201a043c397f43f10eab9fef2f02adf88e5
 raptorjit_commitid=39680ca7ebc3ce43f68c465bedb3e88f074aaeea
