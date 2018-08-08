@@ -30,11 +30,10 @@ ffi = require("ffi")
 
 local function table_filter(t, f)
     local result = {}
-    for i, v in ipairs(t) do
-    print("table_filter", i)
-        --if not f(v) then
+    for _, v in ipairs(t) do
+        if not f(v) then
             table.insert(result, v)
-       -- end
+        end
     end
     return result
 end
@@ -339,7 +338,6 @@ local function permute(tab)
 end
 
 function runner.run_benchmark_list(benchmarks, count, options)
-    print("run_benchmark_list")
     assert(#benchmarks ~= 0, "Empty benchmark list")
     options = options or {}
 
@@ -355,7 +353,6 @@ function runner.run_benchmark_list(benchmarks, count, options)
         local scaling = options.scaling or scaling[name] or 1
         local stats
 
-        print("loop start")
         if options.inprocess then
             local times, jstats = runner.runbench(name, count, scaling)
             stats = runner.calculate_stats(times)
@@ -640,7 +637,6 @@ local function check_filters(name)
 end
 
 function runner.filter_benchmarks(benchmarks)
-    print("filter_benchmarks")
     return table_filter(benchmarks, check_filters)
 end
 
@@ -651,19 +647,12 @@ if arg[1] == "--childprocess" then
     local _, options = runner.parse_commandline({unpack(arg, 5)})
     runner.subprocess_run(benchmark, count, scaling, options)
 else
-    print("runner.init start")
-    runner.init(false)
-     print("runner.init end")
     local benchmarks, options = runner.parse_commandline(arg)
-    print("parse_commandline end")
     runner.processoptions(options)
 
-    print("processoptions end")
-    --jit.off(table_filter)
     if not arg[1] then
         benchmarks = benchlist
     end
     benchmarks = runner.filter_benchmarks(benchmarks)
-    print("filter_benchmarks end")
     runner.run_benchmark_list(benchmarks, options.count, options)
 end
