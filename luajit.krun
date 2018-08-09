@@ -125,8 +125,8 @@ BENCHMARKS = {
 SKIP = [
     "capnproto_decode:GC64:*", # Sometime crashes with GC64
     "capnproto_decode:RaptorJIT:*", # Sometimes crashes as well
-	# We Can't use binary Lua modules with raptojit because it statically 
-	# linked the Lua shared library that they need
+	# We can't use binary Lua modules with Raptorjit because it statically 
+	# linked the Lua shared library that Lua modules are linked to
     "moonscript:RaptorJIT:*",
     #"*:Normal:*",
     #"*:GC64:*",
