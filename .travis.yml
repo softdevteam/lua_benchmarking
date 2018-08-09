@@ -24,7 +24,7 @@ script:
   - ./builds/normal/luajit simplerunner.lua --jitstats -c 3
   - ./builds/gc64/luajit simplerunner.lua -e capnproto_decode -c 3
   - ./builds/dualnum/luajit simplerunner.lua -c 3
-  - ./builds/raptorjit/luajit simplerunner.lua --inprocess -e capnproto_decode -e moonscript -e fasta -c 3
+  - ./builds/raptorjit/luajit simplerunner.lua --inprocess -e capnproto_decode -e moonscript -c 3
   - ./builds/hotcounters/luajit simplerunner.lua -c 3
   - make -f ljbuild.make name=hotcounters clean pull build
   - make -f ljbuild.make name=hotcounters reset

@@ -128,7 +128,6 @@ SKIP = [
 	# We Can't use binary Lua modules with raptojit because it statically 
 	# linked the Lua shared library that they need
     "moonscript:RaptorJIT:*",
-	"fasta:RaptorJIT:*",# Currently leaks tons of memory under raptorjit
     #"*:Normal:*",
     #"*:GC64:*",
     #"*:NoJIT:*",
