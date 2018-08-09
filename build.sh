@@ -21,7 +21,7 @@ else
   fi
 
   if [ ! -d "raptorjit_repo" ]; then
-    git clone https://github.com/raptorjit/raptorjit raptorjit_repo
+    git clone https://github.com/fsfod/raptorjit raptorjit_repo
   fi
 
   if [ -f "commitlock.txt" ]; then
