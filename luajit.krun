@@ -63,7 +63,7 @@ class LuaJITVMDef(GenericScriptingVMDef):
                                                 sync_disks=sync_disks)
 
 VMS = {
-    'Counters_fhot': makevmdef("counters", env_extra = {"hotfunc": 56}, instrument=INSTRUMENT),
+    'RaptorJIT': makevmdef("raptorjit", instrument=INSTRUMENT),
 }
 
 BENCHMARKS = {
