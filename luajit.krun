@@ -63,10 +63,6 @@ class LuaJITVMDef(GenericScriptingVMDef):
                                                 sync_disks=sync_disks)
 
 VMS = {
-    'Normal': makevmdef("normal", instrument=INSTRUMENT),
-    'GC64': makevmdef("gc64", instrument=INSTRUMENT),
-    'NoJIT': makevmdef("nojit", instrument=INSTRUMENT, n_iterations=ITERATIONS_NO_JIT),
-    'DualNum': makevmdef("dualnum", instrument=INSTRUMENT),
     'RaptorJIT': makevmdef("raptorjit", instrument=INSTRUMENT),
 }
 
@@ -127,6 +123,7 @@ SKIP = [
     "capnproto_decode:RaptorJIT:*", # Sometimes crashes as well
 	# We can't use binary Lua modules with Raptorjit because it statically links the Lua shared library
     "moonscript:RaptorJIT:*",
+	"luacheck:RaptorJIT:*", # crashes in our version
     #"*:Normal:*",
     #"*:GC64:*",
     #"*:NoJIT:*",
@@ -147,7 +144,7 @@ SKIP = [
 #POST_EXECUTION_CMDS = ["sudo service cron start"]
 
 # CPU pinning (off by default)
-ENABLE_PINNING = False
+ENABLE_PINNING = True
 
 # Lower and upper bound for acceptable APERF/MPERF ratios
 #AMPERF_RATIO_BOUNDS = 0.995, 1.005
