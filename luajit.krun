@@ -123,7 +123,6 @@ SKIP = [
     "capnproto_decode:RaptorJIT:*", # Sometimes crashes as well
 	# We can't use binary Lua modules with Raptorjit because it statically links the Lua shared library
     "moonscript:RaptorJIT:*",
-	"luacheck:RaptorJIT:*", # crashes in our version
     #"*:Normal:*",
     #"*:GC64:*",
     #"*:NoJIT:*",
